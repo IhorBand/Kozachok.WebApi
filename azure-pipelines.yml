@@ -24,13 +24,13 @@ steps:
 - task: DotNetCoreCLI@2
   inputs:
     command: 'restore'
-    projects: '**/Kozachok.WebAPI.csproj'
+    projects: '**/Kozachok.WebApi.csproj'
   displayName: 'Restore Nuget Packages'
 
 - task: DotNetCoreCLI@2
   inputs: 
     command: 'build'
-    projects: '**/Kozachok.WebAPI.csproj'
+    projects: '**/Kozachok.WebApi.csproj'
     arguments: '--no-restore' 
   displayName: 'Build projects'
 
@@ -58,7 +58,7 @@ steps:
   inputs:
     command: 'publish'
     publishWebProjects: false
-    projects: '**/Kozachok.WebAPI.csproj'
+    projects: '**/Kozachok.WebApi.csproj'
     arguments: '--configuration $(buildConfiguration) --no-restore'
     modifyOutputPath: false
   displayName: 'Publish VideoTranslate'
