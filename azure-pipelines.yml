@@ -7,13 +7,13 @@ pool: Default
 name: $(BuildDefinitionName)_$(Year:yyyy).$(Month).$(DayOfMonth)$(Rev:.r)
 
 variables:
+- group: JFrog
+- name: solution 
   value: '**/*.sln'
 - name: buildPlatform
   value: 'Any CPU'
 - name: buildConfiguration
   value: 'Release'
-
-
 
 steps:
 - task: DotNetCoreCLI@2
