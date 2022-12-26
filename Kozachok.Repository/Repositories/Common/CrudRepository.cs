@@ -52,7 +52,11 @@ namespace Kozachok.Repository.Repositories.Common
 
         public virtual async Task AddAsync(TEntity entity) => await this.set.AddAsync(entity);
 
-        public virtual async Task UpdateAsync(TEntity entity) => this.set.Update(entity);
+        public virtual Task UpdateAsync(TEntity entity)
+        {
+            set.Update(entity);
+            return Task.CompletedTask;
+        }
 
         public virtual PagedResult<TEntity> Page(IQueryable<TEntity> query, int page, int pageSize = GlobalConstants.DefaultPageSize)
         {

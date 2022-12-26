@@ -24,14 +24,6 @@ namespace Kozachok.WebApi.Setup
 
         public static IServiceCollection AddScopedHandlers(this IServiceCollection services, Type handlerType, Assembly assembly)
         {
-            var types = assembly.GetTypes().ToList();
-            types.ForEach(type =>
-            {
-                var interfaces = type.GetInterfaces().ToList();
-                var selectedInterfaces = interfaces.Where(@interface => @interface.IsGenericType && @interface.GetGenericTypeDefinition() == handlerType)
-                        .ToList();
-            });
-
             assembly
                 .GetTypes()
                 .ToList()
