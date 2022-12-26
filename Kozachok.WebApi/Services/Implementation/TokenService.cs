@@ -125,7 +125,7 @@ namespace Kozachok.WebApi.Services.Implementation
                 RefreshTokenExpiresInUTC = refreshTokenExpiredIn.ToString("yyyy-MM-dd HH:mm:ss"),
                 RefreshTokenIssuedInUTC = now.ToString("yyyy-MM-dd HH:mm:ss"),
                 IsAuthorized = true,
-                Message = "OK"
+                Message = "OK, pipeline works."
             };
 
             var cacheOptions = new DistributedCacheEntryOptions();
