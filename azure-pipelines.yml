@@ -3,32 +3,70 @@
 # Add steps that publish symbols, save build artifacts, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 
-trigger:
-- main
-
-pool:
-  vmImage: 'windows-latest'
+pool: Default
+name: $(BuildDefinitionName)_$(Year:yyyy).$(Month).$(DayOfMonth)$(Rev:.r)
 
 variables:
-  solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
-  buildConfiguration: 'Release'
+  value: '**/*.sln'
+- name: buildPlatform
+  value: 'Any CPU'
+- name: buildConfiguration
+  value: 'Release'
+
+
 
 steps:
-- task: NuGetToolInstaller@1
-
-- task: NuGetCommand@2
+- task: DotNetCoreCLI@2
   inputs:
-    restoreSolution: '$(solution)'
+    command: 'restore'
+    projects: '**/Kozachok.WebAPI.csproj'
+  displayName: 'Restore Nuget Packages'
 
-- task: VSBuild@1
-  inputs:
-    solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\WebApp.zip" /p:DeployIisAppPath="Default Web Site"'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+- task: DotNetCoreCLI@2
+  inputs: 
+    command: 'build'
+    projects: '**/Kozachok.WebAPI.csproj'
+    arguments: '--no-restore' 
+  displayName: 'Build projects'
 
-- task: VSTest@2
+#- task: DotNetCoreCLI@2
+#  inputs:
+#    command: 'test'
+#    projects: '**/*Test.csproj'
+#    arguments: '--no-restore --no-build'
+#  displayName: 'Run Tests'
+
+- task: CmdLine@2
   inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    script: 'systemctl stop kozachokdev.service'
+  displayName: 'Stop kozachokdev.service WebAPI'
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '/var/www/kozachokApi'
+    Contents: '**'
+    OverWrite: true
+    TargetFolder: '/var/www/backup_kozachokApi'
+  displayName: 'make a backup'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'publish'
+    publishWebProjects: false
+    projects: '**/Kozachok.WebAPI.csproj'
+    arguments: '--configuration $(buildConfiguration) --no-restore'
+    modifyOutputPath: false
+  displayName: 'Publish VideoTranslate'
+
+- task: ExtractFiles@1
+  inputs:
+    archiveFilePatterns: '**/publish.zip'
+    destinationFolder: '/var/www/kozachokApi'
+    cleanDestinationFolder: true
+    overwriteExistingFiles: true
+  displayName: 'Copy published files into Production folder'
+
+- task: CmdLine@2
+  inputs:
+    script: 'systemctl start kozachokdev.service'
+  displayName: 'Start kozachokdev.service WebAPI'
