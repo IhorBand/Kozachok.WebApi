@@ -41,11 +41,11 @@ namespace Kozachok.Domain.Handlers.Commands
                 .Is(e => e.PasswordConfirmation != e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password confirmation."))
                 .Is(e => userRepository.AnyAsync(u => u.Email == request.Email).Result, async () => await bus.InvokeDomainNotificationAsync("E-mail already exists."));
 
-            var entity = new User(request.Name, request.Email, request.Password);
+            var entity = new User(request.Name, request.Email, request.Password, false);
             await userRepository.AddAsync(entity);
 
             Commit();
-            await bus.InvokeAsync(new CreateUserEvent(entity.Id, entity.Name, entity.Email, entity.Password));
+            _ = bus.InvokeAsync(new CreateUserEvent(entity.Id, entity.Name, entity.Email, entity.Password));
 
             return Unit.Value;
         }

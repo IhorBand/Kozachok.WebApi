@@ -14,18 +14,15 @@ namespace Kozachok.WebApi.Services.Implementation
 {
     public class TokenService : ITokenService
     {
-        private readonly ILogger<TokenService> logger;
         private readonly IUserRepository userRepository;
         private readonly IDistributedCache cache;
         private readonly JwtTokenConfiguration jwtTokenConfiguration;
 
         public TokenService(
-            ILogger<TokenService> logger,
             IUserRepository userRepository,
             IDistributedCache cache,
             JwtTokenConfiguration jwtTokenConfiguration)
         {
-            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             this.cache = cache ?? throw new ArgumentNullException(nameof(cache));
             this.jwtTokenConfiguration = jwtTokenConfiguration ?? throw new ArgumentNullException(nameof(jwtTokenConfiguration));
@@ -33,7 +30,7 @@ namespace Kozachok.WebApi.Services.Implementation
 
         public async Task<AuthorizeUserOutputModel?> GenerateToken(AuthorizeUserInputModel model)
         {
-            if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
+            if (string.IsNullOrWhiteSpace(model.Email))
             {
                 return null;
             }
@@ -42,7 +39,8 @@ namespace Kozachok.WebApi.Services.Implementation
             
             if (user != null)
             {
-                if (!user.CheckPassword(model.Password))
+                if (string.IsNullOrEmpty(model.Password) 
+                    || (!string.IsNullOrEmpty(model.Password) && !user.CheckPassword(model.Password)))
                 {
                     if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.RefreshToken))
                     {
@@ -125,7 +123,7 @@ namespace Kozachok.WebApi.Services.Implementation
                 RefreshTokenExpiresInUTC = refreshTokenExpiredIn.ToString("yyyy-MM-dd HH:mm:ss"),
                 RefreshTokenIssuedInUTC = now.ToString("yyyy-MM-dd HH:mm:ss"),
                 IsAuthorized = true,
-                Message = "OK, pipeline works."
+                Message = "OK"
             };
 
             var cacheOptions = new DistributedCacheEntryOptions();
