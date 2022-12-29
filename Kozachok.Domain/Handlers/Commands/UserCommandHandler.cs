@@ -10,18 +10,31 @@ using Kozachok.Shared.Abstractions.Repositories;
 using Kozachok.Shared.DTO.Models;
 using Kozachok.Shared.Abstractions.Bus;
 using Kozachok.Shared.DTO.Common;
+using Kozachok.Shared.DTO.Configuration;
+using System;
+using Kozachok.Repository.Repositories;
+using Kozachok.Shared.Abstractions.Events;
 
 namespace Kozachok.Domain.Handlers.Commands
 {
-    public class UserCommandHandler : CommandHandler, IRequestHandler<CreateUserCommand>, IRequestHandler<UpdateUserCommand>, IRequestHandler<ChangeUserPasswordCommand>, IRequestHandler<DeleteUserCommand>
+    public class UserCommandHandler : 
+        CommandHandler, 
+        IRequestHandler<CreateUserCommand>, 
+        IRequestHandler<UpdateUserCommand>, 
+        IRequestHandler<ChangeUserPasswordCommand>, 
+        IRequestHandler<DeleteUserCommand>,
+        IRequestHandler<ResendActivationCodeCommand>,
+        IRequestHandler<ActivateUserCommand>
     {
         private readonly IUserRepository userRepository;
+        private readonly IUserConfirmationCodeRepository userConfirmationCodeRepository;
 
         public UserCommandHandler(
             IUnitOfWork uow,
             IMediatorHandler bus,
             INotificationHandler<DomainNotification> notifications,
-            IUserRepository userRepository
+            IUserRepository userRepository,
+            IUserConfirmationCodeRepository userConfirmationCodeRepository
         )
         : base(
                 uow,
@@ -30,6 +43,7 @@ namespace Kozachok.Domain.Handlers.Commands
         )
         {
             this.userRepository = userRepository;
+            this.userConfirmationCodeRepository = userConfirmationCodeRepository;
         }
 
         public async Task<Unit> Handle(CreateUserCommand request, CancellationToken cancellationToken)
@@ -41,11 +55,17 @@ namespace Kozachok.Domain.Handlers.Commands
                 .Is(e => e.PasswordConfirmation != e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password confirmation."))
                 .Is(e => userRepository.AnyAsync(u => u.Email == request.Email).Result, async () => await bus.InvokeDomainNotificationAsync("E-mail already exists."));
 
-            var entity = new User(request.Name, request.Email, request.Password);
+            var entity = new User(request.Name, request.Email, request.Password, false);
             await userRepository.AddAsync(entity);
 
+            var confirmationCodeStr = entity.Id.ToString().Replace("-", "") + Guid.NewGuid().ToString().Replace("-", "");
+
+            var userConfirmationCode = new UserConfirmationCode(entity.Id, confirmationCodeStr);
+            await userConfirmationCodeRepository.AddAsync(userConfirmationCode);
+
             Commit();
-            await bus.InvokeAsync(new CreateUserEvent(entity.Id, entity.Name, entity.Email, entity.Password));
+
+            _ = bus.InvokeAsync(new CreateUserEvent(entity.Id, entity.Name, entity.Email, entity.Password, userConfirmationCode.ConfirmationCode));
 
             return Unit.Value;
         }
@@ -109,6 +129,82 @@ namespace Kozachok.Domain.Handlers.Commands
 
             Commit();
             await bus.InvokeAsync(new DeleteUserEvent(request.Id));
+
+            return Unit.Value;
+        }
+
+        public async Task<Unit> Handle(ResendActivationCodeCommand request, CancellationToken cancellationToken)
+        {
+            request
+                .IsNullEmptyOrWhitespace(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Please, provide E-mail."))
+                .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid E-mail."));
+
+            var user = await userRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
+
+            if (user == null)
+            {
+                await bus.InvokeDomainNotificationAsync("User doesn't exist.");
+                return Unit.Value;
+            }
+
+            if(user.IsActive)
+            {
+                await bus.InvokeDomainNotificationAsync("User is already active.");
+                return Unit.Value;
+            }
+
+            var previousConfirmationCode = await userConfirmationCodeRepository.FirstOrDefaultAsync(ucc => ucc.UserId == user.Id);
+            if(previousConfirmationCode != null)
+            {
+                await userConfirmationCodeRepository.DeleteAsync(previousConfirmationCode.Id);
+            }
+
+            var confirmationCodeStr = user.Id.ToString().Replace("-", "") + Guid.NewGuid().ToString().Replace("-", "");
+
+            var userConfirmationCode = new UserConfirmationCode(user.Id, confirmationCodeStr);
+            await userConfirmationCodeRepository.AddAsync(userConfirmationCode);
+
+            Commit();
+            await bus.InvokeAsync(new ResendActivationCodeEvent(user.Id, user.Name, user.Email, userConfirmationCode.ConfirmationCode));
+
+            return Unit.Value;
+        }
+
+        public async Task<Unit> Handle(ActivateUserCommand request, CancellationToken cancellationToken)
+        {
+            request
+                .IsNullEmptyOrWhitespace(e => e.ConfirmationCode, async () => await bus.InvokeDomainNotificationAsync("Please, provide Confirmation Code."));
+
+            var userConfirmationCode = await userConfirmationCodeRepository.FirstOrDefaultAsync(ucc => ucc.ConfirmationCode == request.ConfirmationCode);
+            
+            if (userConfirmationCode == null)
+            {
+                await bus.InvokeDomainNotificationAsync("Confirmation Code is Invalid.");
+                return Unit.Value;
+            }
+
+            var user = await userRepository.GetAsync(userConfirmationCode.UserId);
+
+            if (user == null)
+            {
+                await bus.InvokeDomainNotificationAsync("User doesn't exist.");
+                return Unit.Value;
+            }
+
+            if (user.IsActive)
+            {
+                await bus.InvokeDomainNotificationAsync("User is already active.");
+                return Unit.Value;
+            }
+
+            user.Activate();
+
+            await userRepository.UpdateAsync(user);
+
+            await userConfirmationCodeRepository.DeleteAsync(userConfirmationCode.Id);
+
+            Commit();
+            await bus.InvokeAsync(new ActivateUserEvent(user.Id, user.Name, user.Email, userConfirmationCode.ConfirmationCode));
 
             return Unit.Value;
         }

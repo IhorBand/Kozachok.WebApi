@@ -9,23 +9,21 @@ using Kozachok.Shared.Abstractions.Repositories;
 using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
 using System.Security.Principal;
+using System.Net;
 
 namespace Kozachok.WebApi.Services.Implementation
 {
     public class TokenService : ITokenService
     {
-        private readonly ILogger<TokenService> logger;
         private readonly IUserRepository userRepository;
         private readonly IDistributedCache cache;
         private readonly JwtTokenConfiguration jwtTokenConfiguration;
 
         public TokenService(
-            ILogger<TokenService> logger,
             IUserRepository userRepository,
             IDistributedCache cache,
             JwtTokenConfiguration jwtTokenConfiguration)
         {
-            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             this.cache = cache ?? throw new ArgumentNullException(nameof(cache));
             this.jwtTokenConfiguration = jwtTokenConfiguration ?? throw new ArgumentNullException(nameof(jwtTokenConfiguration));
@@ -33,20 +31,28 @@ namespace Kozachok.WebApi.Services.Implementation
 
         public async Task<AuthorizeUserOutputModel?> GenerateToken(AuthorizeUserInputModel model)
         {
-            if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
+            if (string.IsNullOrWhiteSpace(model.Email))
             {
-                return null;
+                return new AuthorizeUserOutputModel { IsAuthorized = false, IsActive = false, Message = "Please, provide valid Email!" };
             }
 
             var user = await this.userRepository.FirstOrDefaultAsync(u => u.Email == model.Email);
-            
+
             if (user != null)
             {
-                if (!user.CheckPassword(model.Password))
+                var isPasswordValid = !string.IsNullOrEmpty(model.Password) && user.CheckPassword(model.Password);
+                if (isPasswordValid)
                 {
-                    if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.RefreshToken))
+                    if(!user.IsActive)
                     {
-                        return null;
+                        return new AuthorizeUserOutputModel { IsAuthorized = true, IsActive = false, Message = "Please, Activate your account!" };
+                    }
+                }
+                else
+                {
+                    if (string.IsNullOrWhiteSpace(model.RefreshToken))
+                    {
+                        return new AuthorizeUserOutputModel { IsAuthorized = false, IsActive = false, Message = "Email or Password are invalid!" };
                     }
 
                     var storedToken = cache.GetString(model.RefreshToken);
@@ -71,7 +77,7 @@ namespace Kozachok.WebApi.Services.Implementation
             }
             else
             {
-                return null;
+                return new AuthorizeUserOutputModel { IsAuthorized = false, IsActive = false, Message = "Email or Password are invalid!" };
             }
 
             var now = DateTime.UtcNow;
@@ -125,7 +131,8 @@ namespace Kozachok.WebApi.Services.Implementation
                 RefreshTokenExpiresInUTC = refreshTokenExpiredIn.ToString("yyyy-MM-dd HH:mm:ss"),
                 RefreshTokenIssuedInUTC = now.ToString("yyyy-MM-dd HH:mm:ss"),
                 IsAuthorized = true,
-                Message = "OK, pipeline works."
+                IsActive = user.IsActive,
+                Message = "OK"
             };
 
             var cacheOptions = new DistributedCacheEntryOptions();

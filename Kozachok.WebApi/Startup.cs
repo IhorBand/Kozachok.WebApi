@@ -44,10 +44,7 @@ namespace Kozachok.WebApi
         {
             services.AddDistributedMemoryCache();
 
-            services.AddMediatR(Assembly.GetExecutingAssembly(),
-                typeof(CommandHandler).Assembly,
-                typeof(InMemoryBus).Assembly,
-                typeof(IMediatorHandler).Assembly);
+            services.AddMediatR(typeof(CommandHandler).Assembly);
 
             services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
@@ -231,6 +228,12 @@ namespace Kozachok.WebApi
             var jwtSettings = this.Configuration.GetSection("Jwt").Get<JwtTokenConfiguration>();
             services.AddSingleton(jwtSettings);
 
+            var mailSettings = this.Configuration.GetSection("Mail").Get<MailConfiguration>();
+            services.AddSingleton(mailSettings);
+
+            var endpointSettings = this.Configuration.GetSection("Endpoints").Get<EndpointsConfiguration>();
+            services.AddSingleton(endpointSettings);
+
             // AutoMapper Configuration
             var mapperConfig = new MapperConfiguration(mc =>
             {
@@ -257,8 +260,8 @@ namespace Kozachok.WebApi
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             services.AddScopedByBaseType(typeof(CrudRepository<>)); // -> Repositories
-            services.AddScopedHandlers(typeof(INotificationHandler<>), typeof(UserEventHandler).Assembly); // -> Events
-            services.AddScopedHandlers(typeof(IRequestHandler<>), typeof(UserCommandHandler).Assembly); // -> Commands
+            //services.AddScopedHandlers(typeof(INotificationHandler<>), typeof(UserEventHandler).Assembly); // -> Events
+            //services.AddScopedHandlers(typeof(IRequestHandler<>), typeof(UserCommandHandler).Assembly); // -> Commands
 
             services.AddScoped<ITokenService, TokenService>();
         }

@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MailKit" Version="3.4.3" />
     <PackageReference Include="MediatR" Version="11.1.0" />
   </ItemGroup>
 
@@ -12,6 +13,11 @@
     <ProjectReference Include="..\Kozachok.Repository\Kozachok.Repository.csproj" />
     <ProjectReference Include="..\Kozachok.Shared\Kozachok.Shared.csproj" />
     <ProjectReference Include="..\Kozachok.Utils\Kozachok.Utils.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Handlers\Queries\" />
+    <Folder Include="Queries\" />
   </ItemGroup>
 
 </Project>

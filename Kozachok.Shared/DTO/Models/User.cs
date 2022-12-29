@@ -14,17 +14,19 @@ namespace Kozachok.Shared.DTO.Models
 
         }
 
-        public User(string name, string email, string password)
+        public User(string name, string email, string password, bool isActive)
         {
             Name = name;
             Email = email;
             Password = password.Encrypt();
             CreatedDateUTC = DateTime.UtcNow;
+            IsActive = isActive;
         }
 
         public virtual string Name { get; private set; }
         public virtual string Email { get; private set; }
         public virtual string Password { get; private set; }
+        public virtual bool IsActive { get; private set; }
         public virtual DateTime CreatedDateUTC { get; private set; }
 
         public void UpdateInfo(string name, string email)
@@ -36,5 +38,7 @@ namespace Kozachok.Shared.DTO.Models
         public void ChangePassword(string password) => Password = password.Encrypt();
 
         public bool CheckPassword(string password) => password.Encrypt() == Password;
+
+        public void Activate() => IsActive = true;
     }
 }

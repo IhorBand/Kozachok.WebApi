@@ -41,5 +41,19 @@ namespace Kozachok.WebApi.Controllers
             await bus.SendAsync(command);
             return Response();
         }
+
+        [HttpPut("ResendConfirmationCode")]
+        public async Task<IActionResult> ResendActivationCode([FromBody] ResendActivationCodeCommand command)
+        {
+            await bus.SendAsync(command);
+            return Response();
+        }
+
+        [HttpPut("Activate")]
+        public async Task<IActionResult> Activate([FromBody] ActivateUserCommand command)
+        {
+            await bus.SendAsync(command);
+            return Response();
+        }
     }
 }
