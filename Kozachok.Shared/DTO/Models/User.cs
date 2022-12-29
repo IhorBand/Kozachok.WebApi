@@ -38,5 +38,7 @@ namespace Kozachok.Shared.DTO.Models
         public void ChangePassword(string password) => Password = password.Encrypt();
 
         public bool CheckPassword(string password) => password.Encrypt() == Password;
+
+        public void Activate() => IsActive = true;
     }
 }

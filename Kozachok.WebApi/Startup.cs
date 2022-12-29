@@ -231,6 +231,9 @@ namespace Kozachok.WebApi
             var mailSettings = this.Configuration.GetSection("Mail").Get<MailConfiguration>();
             services.AddSingleton(mailSettings);
 
+            var endpointSettings = this.Configuration.GetSection("Endpoints").Get<EndpointsConfiguration>();
+            services.AddSingleton(endpointSettings);
+
             // AutoMapper Configuration
             var mapperConfig = new MapperConfiguration(mc =>
             {

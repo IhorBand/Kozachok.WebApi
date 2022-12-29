@@ -25,8 +25,10 @@ namespace Kozachok.Bus
 
         public Task InvokeAsync<T>(T @event) where T : Event
         {
-            if (!@event.MessageType.Equals("DomainNotification"))
-                storedEventRepository.AddEventAsync(@event);
+            //TODO: must be async, but ut will take some time to proceed. So, it's disabled for now.
+            // Logging all events to DB (almost every API call)
+            //if (!@event.MessageType.Equals("DomainNotification"))
+            //    storedEventRepository.AddEventAsync(@event);
 
             return mediator.Publish(@event);
         }

@@ -26,13 +26,17 @@ namespace Kozachok.WebApi.Controllers
         }
 
         [HttpPost("generate")]
-        public async Task<IActionResult> GetTokenAsync([FromBody]AuthorizeUserInputModel model)
+        public async Task<IActionResult> GetTokenAsync([FromBody] AuthorizeUserInputModel model)
         {
             var result = await this.tokenService.GenerateToken(model).ConfigureAwait(false);
 
-            if (result == null)
+            if (result != null && (result.IsAuthorized == false || result.IsActive == false))
             {
-                return StatusCode((int)HttpStatusCode.Forbidden, new AuthorizeUserOutputModel { IsAuthorized = false, Message = "Authentication failed!" });
+                return StatusCode((int)HttpStatusCode.Forbidden, result);
+            }
+            else if (result == null)
+            {
+                return StatusCode((int)HttpStatusCode.Forbidden, new AuthorizeUserOutputModel { IsAuthorized = false, IsActive = false, Message = "Authentication failed!" });
             }
 
             return Response(result);
