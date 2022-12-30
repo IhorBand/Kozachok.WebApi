@@ -9,7 +9,6 @@ using Kozachok.Shared.Abstractions.Repositories;
 using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
 using System.Security.Principal;
-using System.Net;
 
 namespace Kozachok.WebApi.Services.Implementation
 {
