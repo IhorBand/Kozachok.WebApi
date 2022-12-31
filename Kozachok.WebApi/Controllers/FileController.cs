@@ -18,8 +18,8 @@ namespace Kozachok.WebApi.Controllers
         {
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Post(IFormFile file)
+        [HttpPost("UploadUserThumbnailImage")]
+        public async Task<IActionResult> UploadUserThumbnailImage(IFormFile file)
         {
             var result = await bus.RequestAsync(new UploadUserThumbnailImageFileCommand() { File = file });
             
