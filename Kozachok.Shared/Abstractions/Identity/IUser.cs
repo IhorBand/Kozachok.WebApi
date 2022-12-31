@@ -1,8 +1,10 @@
-﻿namespace Kozachok.Shared.Abstractions.Identity
+﻿using System;
+
+namespace Kozachok.Shared.Abstractions.Identity
 {
     public interface IUser
     {
-        string Id { get; }
+        Guid? Id { get; }
         string Name { get; }
         string Email { get; }
     }

@@ -27,6 +27,7 @@ namespace Kozachok.Shared.DTO.Models
         public virtual string Email { get; private set; }
         public virtual string Password { get; private set; }
         public virtual bool IsActive { get; private set; }
+        public virtual Guid? ThumbnailImageFileId { get; private set; }
         public virtual DateTime CreatedDateUTC { get; private set; }
 
         public void UpdateInfo(string name, string email)
@@ -34,6 +35,8 @@ namespace Kozachok.Shared.DTO.Models
             Name = name;
             Email = email;
         }
+
+        public void SetThumbnailImageFileId(Guid fileId) => ThumbnailImageFileId = fileId;
 
         public void ChangePassword(string password) => Password = password.Encrypt();
 

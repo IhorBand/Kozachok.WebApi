@@ -1,4 +1,5 @@
 ﻿using Kozachok.Shared.Abstractions.Identity;
+using Kozachok.Shared.DTO.Configuration;
 using System.Security.Claims;
 
 namespace Kozachok.WebApi.Auth
@@ -9,10 +10,44 @@ namespace Kozachok.WebApi.Auth
 
         public UserControl(IHttpContextAccessor httpContextAccessor) => this.httpContextAccessor = httpContextAccessor;
 
-        public string? Id => httpContextAccessor.HttpContext?.User?.Claims?.FirstOrDefault(e => e.Type == ClaimTypes.NameIdentifier)?.Value;
+        public Guid? Id
+        {
+            get
+            {
+                var guid = Guid.Empty;
+                Guid.TryParse(GetClaimValue(JwtCustomClaimNames.UserId), out guid);
+                return guid;
+            }
+        }
 
-        public string? Name => httpContextAccessor.HttpContext?.User?.Claims?.FirstOrDefault(e => e.Type == ClaimTypes.Name)?.Value;
+        public string? Name
+        {
+            get
+            {
+                return GetClaimValue(JwtCustomClaimNames.UserName);
+            }
+        }
 
-        public string? Email => httpContextAccessor.HttpContext?.User?.Claims?.FirstOrDefault(e => e.Type == ClaimTypes.Email)?.Value;
+        public string? Email
+        {
+            get
+            {
+                return GetClaimValue(JwtCustomClaimNames.Email);
+            }
+        }
+
+        private string? GetClaimValue(string claimName)
+        {
+            if(httpContextAccessor.HttpContext != null && httpContextAccessor.HttpContext.User != null && httpContextAccessor.HttpContext.User.Claims != null)
+            {
+                var claim = httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(e => e.Type == claimName);
+                if(claim != null)
+                {
+                    return claim.Value;
+                }
+            }
+
+            return null;
+        }
     }
 }

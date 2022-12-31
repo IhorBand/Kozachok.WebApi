@@ -13,7 +13,7 @@ namespace Kozachok.WebApi.Controllers.Common
     public abstract class BaseController : ControllerBase
     {
         private readonly DomainNotificationHandler notifications;
-        private readonly IMapper mapper;
+        protected readonly IMapper mapper;
 
         protected readonly IMediatorHandler bus;
 

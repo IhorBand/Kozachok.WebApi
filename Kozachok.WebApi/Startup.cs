@@ -237,6 +237,9 @@ namespace Kozachok.WebApi
             var storedEventsConfiguration = this.Configuration.GetSection("StoredEvents").Get<StoredEventsConfiguration>();
             services.AddSingleton(storedEventsConfiguration);
 
+            var fileServerConfiguration = this.Configuration.GetSection("FileServer").Get<FileServerConfiguration>();
+            services.AddSingleton(fileServerConfiguration);
+
             // AutoMapper Configuration
             var mapperConfig = new MapperConfiguration(mc =>
             {
@@ -248,7 +251,7 @@ namespace Kozachok.WebApi
 
             services.AddDbContext<MainDbContext>(options =>
                 options
-                    //.UseLazyLoadingProxies()
+                    .UseLazyLoadingProxies()
                     .UseSqlServer(connectionStrings.Main));
 
             services.AddDbContext<EventStoreSQLContext>(options =>
