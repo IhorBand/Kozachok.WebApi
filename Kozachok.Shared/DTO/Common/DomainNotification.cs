@@ -1,4 +1,5 @@
 ﻿using Kozachok.Shared.Abstractions.Events;
+using System;
 
 namespace Kozachok.Shared.DTO.Common
 {
@@ -9,6 +10,7 @@ namespace Kozachok.Shared.DTO.Common
         public DomainNotification(string message)
         {
             Message = message;
+            AggregateId = Guid.NewGuid();
         }
     }
 }

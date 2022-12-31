@@ -8,6 +8,7 @@ using MediatR;
 using Kozachok.Shared.DTO.Common;
 using Kozachok.WebApi.Auth;
 using Kozachok.Shared.DTO.Configuration;
+using AutoMapper;
 
 namespace Kozachok.WebApi.Controllers
 {
@@ -19,8 +20,9 @@ namespace Kozachok.WebApi.Controllers
 
         public TokenController(
             IMediatorHandler bus,
+            IMapper mapper,
             INotificationHandler<DomainNotification> notifications,
-            ITokenService tokenService) : base(bus, notifications)
+            ITokenService tokenService) : base(bus, mapper, notifications)
         {
             this.tokenService = tokenService;
         }

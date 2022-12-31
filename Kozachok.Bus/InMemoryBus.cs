@@ -3,6 +3,7 @@ using Kozachok.Shared.Abstractions.Commands;
 using Kozachok.Shared.Abstractions.Events;
 using Kozachok.Shared.Abstractions.Repositories;
 using Kozachok.Shared.DTO.Common;
+using Kozachok.Shared.DTO.Configuration;
 using MediatR;
 using System.Threading.Tasks;
 
@@ -12,11 +13,13 @@ namespace Kozachok.Bus
     {
         private readonly IMediator mediator;
         private readonly IStoredEventRepository storedEventRepository;
+        private readonly StoredEventsConfiguration storedEventsConfiguration;
 
-        public InMemoryBus(IMediator mediator, IStoredEventRepository storedEventRepository)
+        public InMemoryBus(IMediator mediator, IStoredEventRepository storedEventRepository, StoredEventsConfiguration storedEventsConfiguration)
         {
             this.mediator = mediator;
             this.storedEventRepository = storedEventRepository;
+            this.storedEventsConfiguration = storedEventsConfiguration;
         }
 
         public async Task SendAsync<T>(T command) where T : Command => await mediator.Send(command);
@@ -25,10 +28,8 @@ namespace Kozachok.Bus
 
         public Task InvokeAsync<T>(T @event) where T : Event
         {
-            //TODO: must be async, but ut will take some time to proceed. So, it's disabled for now.
-            // Logging all events to DB (almost every API call)
-            //if (!@event.MessageType.Equals("DomainNotification"))
-            //    storedEventRepository.AddEventAsync(@event);
+            if (storedEventsConfiguration.IsStoredEventsOn && !@event.MessageType.Equals("DomainNotification"))
+                storedEventRepository.AddEventAsync(@event);
 
             return mediator.Publish(@event);
         }

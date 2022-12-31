@@ -8,5 +8,6 @@
         public string Subject { get; set; }
         public int TokenExpiresIn { get; set; }
         public int RefreshTokenExpiresIn { get; set; }
+        public int RememberMeRefreshTokenExpiresInDays { get; set; }
     }
 }

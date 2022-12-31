@@ -10,10 +10,7 @@ using Kozachok.Shared.Abstractions.Repositories;
 using Kozachok.Shared.DTO.Models;
 using Kozachok.Shared.Abstractions.Bus;
 using Kozachok.Shared.DTO.Common;
-using Kozachok.Shared.DTO.Configuration;
 using System;
-using Kozachok.Repository.Repositories;
-using Kozachok.Shared.Abstractions.Events;
 
 namespace Kozachok.Domain.Handlers.Commands
 {
@@ -24,17 +21,21 @@ namespace Kozachok.Domain.Handlers.Commands
         IRequestHandler<ChangeUserPasswordCommand>, 
         IRequestHandler<DeleteUserCommand>,
         IRequestHandler<ResendActivationCodeCommand>,
-        IRequestHandler<ActivateUserCommand>
+        IRequestHandler<ActivateUserCommand>,
+        IRequestHandler<SendForgetPasswordEmailCommand>,
+        IRequestHandler<ForgetPasswordCommand>
     {
         private readonly IUserRepository userRepository;
         private readonly IUserConfirmationCodeRepository userConfirmationCodeRepository;
+        private readonly IUserForgetPasswordCodeRepository userForgetPasswordCodeRepository;
 
         public UserCommandHandler(
             IUnitOfWork uow,
             IMediatorHandler bus,
             INotificationHandler<DomainNotification> notifications,
             IUserRepository userRepository,
-            IUserConfirmationCodeRepository userConfirmationCodeRepository
+            IUserConfirmationCodeRepository userConfirmationCodeRepository,
+            IUserForgetPasswordCodeRepository userForgetPasswordCodeRepository
         )
         : base(
                 uow,
@@ -44,6 +45,7 @@ namespace Kozachok.Domain.Handlers.Commands
         {
             this.userRepository = userRepository;
             this.userConfirmationCodeRepository = userConfirmationCodeRepository;
+            this.userForgetPasswordCodeRepository = userForgetPasswordCodeRepository;
         }
 
         public async Task<Unit> Handle(CreateUserCommand request, CancellationToken cancellationToken)
@@ -54,6 +56,11 @@ namespace Kozachok.Domain.Handlers.Commands
                 .IsNullEmptyOrWhitespace(e => e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password."))
                 .Is(e => e.PasswordConfirmation != e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password confirmation."))
                 .Is(e => userRepository.AnyAsync(u => u.Email == request.Email).Result, async () => await bus.InvokeDomainNotificationAsync("E-mail already exists."));
+
+            if (!IsValidOperation())
+            {
+                return Unit.Value;
+            }
 
             var entity = new User(request.Name, request.Email, request.Password, false);
             await userRepository.AddAsync(entity);
@@ -72,23 +79,26 @@ namespace Kozachok.Domain.Handlers.Commands
 
         public async Task<Unit> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
         {
-            var original = await userRepository.GetAsync(request.Id); // -> Get entity from db.
+            var original = await userRepository.GetAsync(request.Id);
 
-            if (original == null) // -> If it is null, notificate and stop to avoid null exception.
+            if (original == null)
             {
                 await bus.InvokeDomainNotificationAsync("Not found.");
                 return Unit.Value;
             }
 
-            request // -> Data validadtion
+            request
                 .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid e-mail."))
                 .IsNullEmptyOrWhitespace(e => e.Name, async () => await bus.InvokeDomainNotificationAsync("Invalid name."))
                 .Is(e => userRepository.AnyAsync(u => u.Email == request.Email && u.Id != request.Id).Result, async () => await bus.InvokeDomainNotificationAsync("E-mail already exists."));
 
-            // -> Set new info
+            if (!IsValidOperation())
+            {
+                return Unit.Value;
+            }
+
             original.UpdateInfo(request.Name, request.Email);
 
-            // -> Db persist
             await userRepository.UpdateAsync(original);
 
             Commit();
@@ -99,22 +109,25 @@ namespace Kozachok.Domain.Handlers.Commands
 
         public async Task<Unit> Handle(ChangeUserPasswordCommand request, CancellationToken cancellationToken)
         {
-            var original = await userRepository.GetAsync(request.Id); // -> Get entity from db.
+            var original = await userRepository.GetAsync(request.Id);
 
-            if (original == null) // -> If it is null, notificate and stop to avoid null exception.
+            if (original == null)
             {
                 await bus.InvokeDomainNotificationAsync("Not found.");
                 return Unit.Value;
             }
 
-            request // -> Data validadtion
+            request
                 .IsNullEmptyOrWhitespace(e => e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password."))
                 .Is(e => e.PasswordConfirmation != e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password confirmation."));
 
-            // -> Set new info
+            if (!IsValidOperation())
+            {
+                return Unit.Value;
+            }
+
             original.ChangePassword(request.Password);
 
-            // -> Db persist
             await userRepository.UpdateAsync(original);
 
             Commit();
@@ -138,31 +151,37 @@ namespace Kozachok.Domain.Handlers.Commands
             request
                 .IsNullEmptyOrWhitespace(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Please, provide E-mail."))
                 .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid E-mail."));
+            
+            if (!IsValidOperation())
+            {
+                return Unit.Value;
+            }
 
             var user = await userRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
 
             if (user == null)
             {
-                await bus.InvokeDomainNotificationAsync("User doesn't exist.");
+                await bus.InvokeDomainNotificationAsync("Cannot Send Activation Code.");
                 return Unit.Value;
             }
 
             if(user.IsActive)
             {
-                await bus.InvokeDomainNotificationAsync("User is already active.");
+                await bus.InvokeDomainNotificationAsync("Cannot Send Activation Code.");
                 return Unit.Value;
             }
 
             var previousConfirmationCode = await userConfirmationCodeRepository.FirstOrDefaultAsync(ucc => ucc.UserId == user.Id);
-            if(previousConfirmationCode != null)
-            {
-                await userConfirmationCodeRepository.DeleteAsync(previousConfirmationCode.Id);
-            }
 
-            var confirmationCodeStr = user.Id.ToString().Replace("-", "") + Guid.NewGuid().ToString().Replace("-", "");
+            var confirmationCodeStr = Guid.NewGuid().ToString().Replace("-", "") + user.Id.ToString().Replace("-", "");
 
             var userConfirmationCode = new UserConfirmationCode(user.Id, confirmationCodeStr);
             await userConfirmationCodeRepository.AddAsync(userConfirmationCode);
+
+            if(userConfirmationCode.Id != Guid.Empty && previousConfirmationCode != null)
+            {
+                await userConfirmationCodeRepository.DeleteAsync(previousConfirmationCode.Id);
+            }
 
             Commit();
             await bus.InvokeAsync(new ResendActivationCodeEvent(user.Id, user.Name, user.Email, userConfirmationCode.ConfirmationCode));
@@ -174,6 +193,11 @@ namespace Kozachok.Domain.Handlers.Commands
         {
             request
                 .IsNullEmptyOrWhitespace(e => e.ConfirmationCode, async () => await bus.InvokeDomainNotificationAsync("Please, provide Confirmation Code."));
+
+            if (!IsValidOperation())
+            {
+                return Unit.Value;
+            }
 
             var userConfirmationCode = await userConfirmationCodeRepository.FirstOrDefaultAsync(ucc => ucc.ConfirmationCode == request.ConfirmationCode);
             
@@ -187,13 +211,13 @@ namespace Kozachok.Domain.Handlers.Commands
 
             if (user == null)
             {
-                await bus.InvokeDomainNotificationAsync("User doesn't exist.");
+                await bus.InvokeDomainNotificationAsync("Cannot Activate User.");
                 return Unit.Value;
             }
 
             if (user.IsActive)
             {
-                await bus.InvokeDomainNotificationAsync("User is already active.");
+                await bus.InvokeDomainNotificationAsync("Cannot Activate User.");
                 return Unit.Value;
             }
 
@@ -205,6 +229,83 @@ namespace Kozachok.Domain.Handlers.Commands
 
             Commit();
             await bus.InvokeAsync(new ActivateUserEvent(user.Id, user.Name, user.Email, userConfirmationCode.ConfirmationCode));
+
+            return Unit.Value;
+        }
+
+        public async Task<Unit> Handle(SendForgetPasswordEmailCommand request, CancellationToken cancellationToken)
+        {
+            request
+                .IsNullEmptyOrWhitespace(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Please, provide E-mail."))
+                .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid E-mail."));
+
+            if (!IsValidOperation())
+            {
+                return Unit.Value;
+            }
+
+            var user = await userRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
+
+            if (user == null)
+            {
+                await bus.InvokeDomainNotificationAsync("Cannot Send Forget Password Code.");
+                return Unit.Value;
+            }
+
+            var previousCode = await userForgetPasswordCodeRepository.FirstOrDefaultAsync(ucc => ucc.UserId == user.Id);
+            
+            var forgetPasswordCodeStr = Guid.NewGuid().ToString().Replace("-", "") + user.Id.ToString().Replace("-", "");
+
+            var userForgetPasswordCode = new UserForgetPasswordCode(user.Id, forgetPasswordCodeStr);
+            await userForgetPasswordCodeRepository.AddAsync(userForgetPasswordCode);
+
+            if (userForgetPasswordCode.Id != Guid.Empty && previousCode != null)
+            {
+                await userForgetPasswordCodeRepository.DeleteAsync(previousCode.Id);
+            }
+
+            Commit();
+            await bus.InvokeAsync(new SendForgetPasswordEmailEvent(user.Id, user.Name, user.Email, userForgetPasswordCode.ForgetPasswordCode));
+
+            return Unit.Value;
+        }
+
+        public async Task<Unit> Handle(ForgetPasswordCommand request, CancellationToken cancellationToken)
+        {
+            request
+                .IsNullEmptyOrWhitespace(e => e.ForgetPasswordCode, async () => await bus.InvokeDomainNotificationAsync("Please, provide Forget Password Code."))
+                .IsNullEmptyOrWhitespace(e => e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password."))
+                .Is(e => e.PasswordConfirmation != e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password confirmation."));
+
+            if (!IsValidOperation())
+            {
+                return Unit.Value;
+            }
+
+            var userForgetPasswordCode = await userForgetPasswordCodeRepository.FirstOrDefaultAsync(ucc => ucc.ForgetPasswordCode == request.ForgetPasswordCode);
+
+            if (userForgetPasswordCode == null)
+            {
+                await bus.InvokeDomainNotificationAsync("Forget Password Code is Invalid.");
+                return Unit.Value;
+            }
+
+            var user = await userRepository.GetAsync(userForgetPasswordCode.UserId);
+
+            if (user == null)
+            {
+                await bus.InvokeDomainNotificationAsync("Cannot Change Password for that User.");
+                return Unit.Value;
+            }
+
+            user.ChangePassword(request.Password);
+
+            await userRepository.UpdateAsync(user);
+
+            await userForgetPasswordCodeRepository.DeleteAsync(userForgetPasswordCode.Id);
+
+            Commit();
+            await bus.InvokeAsync(new ForgetPasswordEvent(user.Id, user.Name, user.Email, userForgetPasswordCode.ForgetPasswordCode));
 
             return Unit.Value;
         }

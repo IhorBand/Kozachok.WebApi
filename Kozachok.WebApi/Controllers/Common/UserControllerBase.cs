@@ -2,12 +2,13 @@
 using Kozachok.Shared.Abstractions.Bus;
 using Kozachok.Shared.DTO.Common;
 using MediatR;
+using AutoMapper;
 
 namespace Kozachok.WebApi.Controllers.Common
 {
     public class UserControllerBase : BaseController
     {
-        protected UserControllerBase(IMediatorHandler bus, INotificationHandler<DomainNotification> notifications) : base(bus, notifications)
+        protected UserControllerBase(IMediatorHandler bus, IMapper mapper, INotificationHandler<DomainNotification> notifications) : base(bus, mapper, notifications)
         {
         }
 

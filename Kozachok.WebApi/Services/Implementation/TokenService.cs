@@ -9,7 +9,6 @@ using Kozachok.Shared.Abstractions.Repositories;
 using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
 using System.Security.Principal;
-using System.Net;
 
 namespace Kozachok.WebApi.Services.Implementation
 {
@@ -83,8 +82,18 @@ namespace Kozachok.WebApi.Services.Implementation
             var now = DateTime.UtcNow;
             var expiredIn = now.AddSeconds(this.jwtTokenConfiguration.TokenExpiresIn);
             var expiresIn = expiredIn - now;
-            var refreshTokenExpiredIn = now.AddSeconds(this.jwtTokenConfiguration.RefreshTokenExpiresIn);
-            var refreshTokenExpiresIn = refreshTokenExpiredIn - now;
+            DateTime refreshTokenExpiredIn;
+            
+            if (model.RememberMe)
+            {
+                refreshTokenExpiredIn = now.AddDays(this.jwtTokenConfiguration.RememberMeRefreshTokenExpiresInDays);
+            }
+            else
+            {
+                refreshTokenExpiredIn = now.AddSeconds(this.jwtTokenConfiguration.RefreshTokenExpiresIn);
+            }
+
+            TimeSpan refreshTokenExpiresIn = refreshTokenExpiredIn - now;
 
             var identity = new ClaimsIdentity
             (

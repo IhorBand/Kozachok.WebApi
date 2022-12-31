@@ -1,6 +1,8 @@
-﻿using Kozachok.Domain.Handlers.Notifications;
+﻿using AutoMapper;
+using Kozachok.Domain.Handlers.Notifications;
 using Kozachok.Shared.Abstractions.Bus;
 using Kozachok.Shared.DTO.Common;
+using Kozachok.WebApi.Models.Common;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,11 +13,14 @@ namespace Kozachok.WebApi.Controllers.Common
     public abstract class BaseController : ControllerBase
     {
         private readonly DomainNotificationHandler notifications;
+        private readonly IMapper mapper;
+
         protected readonly IMediatorHandler bus;
 
-        protected BaseController(IMediatorHandler bus, INotificationHandler<DomainNotification> notifications)
+        protected BaseController(IMediatorHandler bus, IMapper mapper, INotificationHandler<DomainNotification> notifications)
         {
             this.bus = bus;
+            this.mapper = mapper;
             this.notifications = (DomainNotificationHandler)notifications;
         }
 
@@ -33,7 +38,9 @@ namespace Kozachok.WebApi.Controllers.Common
                 return Ok(result);
             }
 
-            return BadRequest(Notifications);
+            var errors = this.mapper.Map<ErrorMessage[]>(Notifications);
+
+            return BadRequest(errors);
         }
 
         protected string? GetClaimValue(string claimName)

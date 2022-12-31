@@ -9,7 +9,12 @@ namespace Kozachok.Domain.Handlers.Notifications
 {
     public class DomainNotificationHandler : INotificationHandler<DomainNotification>
     {
-        private readonly List<DomainNotification> notifications = new List<DomainNotification>();
+        private List<DomainNotification> notifications;
+
+        public DomainNotificationHandler() 
+        {
+            this.notifications = new List<DomainNotification>();
+        }
 
         public Task Handle(DomainNotification message, CancellationToken cancellationToken)
         {

@@ -10,6 +10,7 @@ using System;
 using Kozachok.Shared.Abstractions.Repositories;
 using Kozachok.Shared.DTO.Models;
 using Org.BouncyCastle.Asn1.Esf;
+using Kozachok.Domain.Commands.User;
 
 namespace Kozachok.Domain.Handlers.Events
 {
@@ -19,7 +20,9 @@ namespace Kozachok.Domain.Handlers.Events
         INotificationHandler<DeleteUserEvent>, 
         INotificationHandler<ChangeUserPasswordEvent>,
         INotificationHandler<ResendActivationCodeEvent>,
-        INotificationHandler<ActivateUserEvent>
+        INotificationHandler<ActivateUserEvent>,
+        INotificationHandler<SendForgetPasswordEmailEvent>,
+        INotificationHandler<ForgetPasswordEvent>
     {
         private readonly MailConfiguration mailConfiguration;
         private readonly EndpointsConfiguration endpointsConfiguration;
@@ -86,10 +89,38 @@ namespace Kozachok.Domain.Handlers.Events
 
             return Task.CompletedTask;
         }
+        
         public Task Handle(ActivateUserEvent notification, CancellationToken cancellationToken)
         {
             //TODO: Semd Welcome email.
             return Task.CompletedTask;
         }
+
+        public Task Handle(SendForgetPasswordEmailEvent notification, CancellationToken cancellationToken)
+        {
+            var forgetPasswordUrl = endpointsConfiguration.ForgetPasswordUrl.Replace("code=", $"code={notification.ForgetPasswordCode}");
+
+            //TODO: Move Email Jobs to another class
+            var mailMessage = new MimeMessage();
+            mailMessage.From.Add(new MailboxAddress(mailConfiguration.FromName, mailConfiguration.FromEmail));
+            mailMessage.To.Add(new MailboxAddress(notification.Name, notification.Email));
+            mailMessage.Subject = "Forget Password Email";
+            mailMessage.Body = new TextPart("plain")
+            {
+                Text = $"Hello, {notification.Name}! Please, find your forget password URL below. \n {forgetPasswordUrl} \n\n Thank you."
+            };
+
+            using (var smtpClient = new SmtpClient())
+            {
+                smtpClient.Connect(mailConfiguration.SmtpHost, mailConfiguration.SmtpPort, false);
+                smtpClient.Authenticate(mailConfiguration.UserName, mailConfiguration.Password);
+                smtpClient.Send(mailMessage);
+                smtpClient.Disconnect(true);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task Handle(ForgetPasswordEvent notification, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

@@ -24,7 +24,7 @@ using Kozachok.Repository.Repositories.Common;
 using MediatR;
 using Kozachok.WebApi.Setup;
 using System.Reflection;
-using Kozachok.Domain.Handlers.Common;
+using MimeKit.Cryptography;
 
 namespace Kozachok.WebApi
 {
@@ -44,7 +44,7 @@ namespace Kozachok.WebApi
         {
             services.AddDistributedMemoryCache();
 
-            services.AddMediatR(typeof(CommandHandler).Assembly);
+            services.AddMediatR(options => options.AsScoped(), AppDomain.CurrentDomain.GetAssemblies());
 
             services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
@@ -234,6 +234,9 @@ namespace Kozachok.WebApi
             var endpointSettings = this.Configuration.GetSection("Endpoints").Get<EndpointsConfiguration>();
             services.AddSingleton(endpointSettings);
 
+            var storedEventsConfiguration = this.Configuration.GetSection("StoredEvents").Get<StoredEventsConfiguration>();
+            services.AddSingleton(storedEventsConfiguration);
+
             // AutoMapper Configuration
             var mapperConfig = new MapperConfiguration(mc =>
             {
@@ -250,7 +253,7 @@ namespace Kozachok.WebApi
 
             services.AddDbContext<EventStoreSQLContext>(options =>
                 options
-                    //.UseLazyLoadingProxies()
+                    .UseLazyLoadingProxies()
                     .UseSqlServer(connectionStrings.Main));
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -260,8 +263,8 @@ namespace Kozachok.WebApi
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             services.AddScopedByBaseType(typeof(CrudRepository<>)); // -> Repositories
-            //services.AddScopedHandlers(typeof(INotificationHandler<>), typeof(UserEventHandler).Assembly); // -> Events
-            //services.AddScopedHandlers(typeof(IRequestHandler<>), typeof(UserCommandHandler).Assembly); // -> Commands
+            services.AddScopedHandlers(typeof(INotificationHandler<>), typeof(UserEventHandler).Assembly); // -> Events
+            services.AddScopedHandlers(typeof(IRequestHandler<,>), typeof(UserCommandHandler).Assembly); // -> Commands
 
             services.AddScoped<ITokenService, TokenService>();
         }

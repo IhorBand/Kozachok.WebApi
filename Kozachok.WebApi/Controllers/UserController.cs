@@ -1,11 +1,10 @@
-﻿using Kozachok.Domain.Commands.User;
+﻿using AutoMapper;
+using Kozachok.Domain.Commands.User;
 using Kozachok.Shared.Abstractions.Bus;
-using Kozachok.Shared.Abstractions.Repositories;
 using Kozachok.Shared.DTO.Common;
 using Kozachok.WebApi.Auth;
 using Kozachok.WebApi.Controllers.Common;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Kozachok.WebApi.Controllers
@@ -13,9 +12,10 @@ namespace Kozachok.WebApi.Controllers
     public class UserController : UserControllerBase
     {
         public UserController(
-            IMediatorHandler mediator, 
+            IMediatorHandler mediator,
+            IMapper mapper,
             INotificationHandler<DomainNotification> notifications
-            ) : base(mediator, notifications)
+            ) : base(mediator, mapper, notifications)
         {
         }
 
@@ -51,6 +51,20 @@ namespace Kozachok.WebApi.Controllers
 
         [HttpPut("Activate")]
         public async Task<IActionResult> Activate([FromBody] ActivateUserCommand command)
+        {
+            await bus.SendAsync(command);
+            return Response();
+        }
+
+        [HttpPut("SendForgetPasswordEmail")]
+        public async Task<IActionResult> SendForgetPasswordEmail([FromBody] SendForgetPasswordEmailCommand command)
+        {
+            await bus.SendAsync(command);
+            return Response();
+        }
+
+        [HttpPut("ForgetPassword")]
+        public async Task<IActionResult> ForgetPassword([FromBody] ForgetPasswordCommand command)
         {
             await bus.SendAsync(command);
             return Response();
