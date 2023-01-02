@@ -11,9 +11,6 @@ using Kozachok.Shared.DTO.Models;
 using Kozachok.Shared.Abstractions.Bus;
 using Kozachok.Shared.DTO.Common;
 using System;
-using Kozachok.Repository.Repositories;
-using Kozachok.Shared.DTO.Configuration;
-using Kozachok.Shared.Abstractions.Identity;
 
 namespace Kozachok.Domain.Handlers.Commands
 {
@@ -26,17 +23,12 @@ namespace Kozachok.Domain.Handlers.Commands
         IRequestHandler<ResendActivationCodeCommand>,
         IRequestHandler<ActivateUserCommand>,
         IRequestHandler<SendForgetPasswordEmailCommand>,
-        IRequestHandler<ForgetPasswordCommand>,
-        IRequestHandler<UpdateUserThumbnailImageCommand, File>
+        IRequestHandler<ForgetPasswordCommand>
     {
         private readonly IUserRepository userRepository;
         private readonly IUserConfirmationCodeRepository userConfirmationCodeRepository;
         private readonly IUserForgetPasswordCodeRepository userForgetPasswordCodeRepository;
         private readonly IFileRepository fileRepository;
-        private readonly IFileServerRepository fileServerRepository;
-
-        private readonly FileServerConfiguration fileServerConfiguration;
-        private readonly IUser user;
 
         public UserCommandHandler(
             IUnitOfWork uow,
@@ -45,10 +37,7 @@ namespace Kozachok.Domain.Handlers.Commands
             IUserRepository userRepository,
             IUserConfirmationCodeRepository userConfirmationCodeRepository,
             IUserForgetPasswordCodeRepository userForgetPasswordCodeRepository,
-            IFileRepository fileRepository,
-            IFileServerRepository fileServerRepository,
-            FileServerConfiguration fileServerConfiguration,
-            IUser user
+            IFileRepository fileRepository
         )
         : base(
                 uow,
@@ -60,9 +49,6 @@ namespace Kozachok.Domain.Handlers.Commands
             this.userConfirmationCodeRepository = userConfirmationCodeRepository;
             this.userForgetPasswordCodeRepository = userForgetPasswordCodeRepository;
             this.fileRepository = fileRepository;
-            this.fileServerRepository = fileServerRepository;
-            this.fileServerConfiguration = fileServerConfiguration;
-            this.user = user;
         }
 
         public async Task<Unit> Handle(CreateUserCommand request, CancellationToken cancellationToken)
@@ -338,66 +324,5 @@ namespace Kozachok.Domain.Handlers.Commands
         }
 
         public void Dispose() => userRepository.Dispose();
-
-        public async Task<File> Handle(UpdateUserThumbnailImageCommand request, CancellationToken cancellationToken)
-        {
-            request
-                .Is(e => e.File.Length <= 0, async () => await bus.InvokeDomainNotificationAsync("File wasn't uploaded."));
-
-            if (!IsValidOperation())
-            {
-                return null;
-            }
-            
-            if(user.Id == null)
-            {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return null;
-            }
-
-            var currentUser = await userRepository.GetAsync(user.Id.Value);
-
-            if (currentUser == null)
-            {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return null;
-            }
-
-            var fileServer = await fileServerRepository.FirstOrDefaultAsync(fs => fs.IsActive);
-
-            var filePath = fileServer.Path + fileServerConfiguration.UserAvatarPath;
-            var extension = System.IO.Path.GetExtension(request.File.FileName);
-            var fileName = Guid.NewGuid().ToString().Replace("-", "") + extension;
-            var fullFilePath = System.IO.Path.Combine(filePath, fileName);
-            var fileUrl = fileServer.Url + fileServerConfiguration.UserAvatarPath + fileName;
-
-            var uploadedFile = new File(fileName, fileServer.Id, Shared.DTO.Enums.FileType.Image, extension, fullFilePath, fileUrl, false);
-            uploadedFile.SetSize(request.File.Length);
-
-            await fileRepository.AddAsync(uploadedFile);
-
-            if (currentUser.ThumbnailImageFileId != null)
-            {
-                var previousImage = await fileRepository.GetAsync(currentUser.ThumbnailImageFileId.Value);
-                if (previousImage != null)
-                {
-                    System.IO.File.Delete(previousImage.FullPath);
-
-                    await fileRepository.DeleteAsync(previousImage.Id);
-                }
-            }
-
-            currentUser.SetThumbnailImageFileId(uploadedFile.Id);
-            await userRepository.UpdateAsync(currentUser);
-
-            using (var fileStream = new System.IO.FileStream(fullFilePath, System.IO.FileMode.Create))
-            {
-                await request.File.CopyToAsync(fileStream);
-            }
-
-            Commit();
-
-            return uploadedFile;
-        }
     }
 }

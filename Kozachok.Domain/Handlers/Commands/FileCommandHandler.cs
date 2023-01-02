@@ -1,5 +1,4 @@
-﻿using Kozachok.Domain.Events.User;
-using Kozachok.Domain.Handlers.Common;
+﻿using Kozachok.Domain.Handlers.Common;
 using Kozachok.Shared.Abstractions.Bus;
 using Kozachok.Shared.Abstractions.Repositories.Common;
 using Kozachok.Shared.Abstractions.Repositories;
@@ -11,18 +10,21 @@ using System.Threading.Tasks;
 using System.Threading;
 using Kozachok.Utils.Validation;
 using Kozachok.Shared.DTO.Configuration;
+using Kozachok.Shared.Abstractions.Identity;
 using Kozachok.Domain.Commands.File;
 
 namespace Kozachok.Domain.Handlers.Commands
 {
     public class FileCommandHandler :
         CommandHandler,
-        IRequestHandler<UploadUserThumbnailImageFileCommand, File>
+        IRequestHandler<UpdateUserThumbnailImageCommand, File>
     {
         private readonly IFileServerRepository fileServerRepository;
         private readonly IFileRepository fileRepository;
+        private readonly IUserRepository userRepository;
 
         private readonly FileServerConfiguration fileServerConfiguration;
+        private readonly IUser user;
 
         public FileCommandHandler(
             IUnitOfWork uow,
@@ -30,7 +32,9 @@ namespace Kozachok.Domain.Handlers.Commands
             INotificationHandler<DomainNotification> notifications,
             IFileServerRepository fileServerRepository,
             IFileRepository fileRepository,
-            FileServerConfiguration fileServerConfiguration
+            IUserRepository userRepository,
+            FileServerConfiguration fileServerConfiguration,
+            IUser user
         )
         : base(
                 uow,
@@ -40,16 +44,32 @@ namespace Kozachok.Domain.Handlers.Commands
         {
             this.fileServerRepository = fileServerRepository;
             this.fileRepository = fileRepository;
+            this.userRepository = userRepository;
             this.fileServerConfiguration = fileServerConfiguration;
+            this.user = user;
         }
 
-        public async Task<File> Handle(UploadUserThumbnailImageFileCommand request, CancellationToken cancellationToken)
+        public async Task<File> Handle(UpdateUserThumbnailImageCommand request, CancellationToken cancellationToken)
         {
             request
                 .Is(e => e.File.Length <= 0, async () => await bus.InvokeDomainNotificationAsync("File wasn't uploaded."));
 
             if (!IsValidOperation())
             {
+                return null;
+            }
+
+            if (user.Id == null)
+            {
+                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                return null;
+            }
+
+            var currentUser = await userRepository.GetAsync(user.Id.Value);
+
+            if (currentUser == null)
+            {
+                await bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return null;
             }
 
@@ -65,6 +85,20 @@ namespace Kozachok.Domain.Handlers.Commands
             uploadedFile.SetSize(request.File.Length);
 
             await fileRepository.AddAsync(uploadedFile);
+
+            if (currentUser.ThumbnailImageFileId != null)
+            {
+                var previousImage = await fileRepository.GetAsync(currentUser.ThumbnailImageFileId.Value);
+                if (previousImage != null)
+                {
+                    System.IO.File.Delete(previousImage.FullPath);
+
+                    await fileRepository.DeleteAsync(previousImage.Id);
+                }
+            }
+
+            currentUser.SetThumbnailImageFileId(uploadedFile.Id);
+            await userRepository.UpdateAsync(currentUser);
 
             using (var fileStream = new System.IO.FileStream(fullFilePath, System.IO.FileMode.Create))
             {
