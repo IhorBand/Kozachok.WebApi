@@ -11,6 +11,8 @@ namespace Kozachok.WebApi.Infrastructure.MappingProfiles
             CreateMap<DomainNotification, ErrorMessage>()
                 .ForMember(dest => dest.Message, opt => opt.MapFrom(src => src.Message))
                 .ForMember(dest => dest.DateTime, opt => opt.MapFrom(src => src.DateTime));
+
+            CreateTwoWayMap<Shared.DTO.Models.File, Models.File.File>();
         }
 
         public void CreateTwoWayMap<T1, T2>()

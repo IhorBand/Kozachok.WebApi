@@ -26,6 +26,22 @@ namespace Kozachok.WebApi.Controllers
             return Response();
         }
 
+        [HttpPost("UpdateThumbnailImage")]
+        [BearerAuthorization()]
+        public async Task<IActionResult> UpdateThumbnailImage(IFormFile file)
+        {
+            var result = await bus.RequestAsync(new UpdateUserThumbnailImageCommand() { File = file });
+
+            if (result != null)
+            {
+                var model = mapper.Map<Models.File.File>(result);
+                return Response(model);
+            }
+
+            return Response();
+        }
+            
+
         [HttpPut()]
         [BearerAuthorization()]
         public async Task<IActionResult> Put([FromBody] UpdateUserCommand command)

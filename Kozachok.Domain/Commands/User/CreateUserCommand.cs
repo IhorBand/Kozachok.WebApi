@@ -1,4 +1,5 @@
 ﻿using Kozachok.Shared.Abstractions.Commands;
+using System;
 
 namespace Kozachok.Domain.Commands.User
 {
@@ -8,5 +9,6 @@ namespace Kozachok.Domain.Commands.User
         public string Email { get; set; }
         public string Password { get; set; }
         public string PasswordConfirmation { get; set; }
+        public Guid? ThumbnailImageFileId { get; set; }
     }
 }

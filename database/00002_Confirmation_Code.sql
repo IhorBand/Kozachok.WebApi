@@ -1,6 +1,6 @@
 CREATE TABLE [dbo].[T_User_Confirmation_Code](
 	[Id] [UNIQUEIDENTIFIER] CONSTRAINT DF_T_User_Confirmation_Code_Id DEFAULT NEWID() NOT NULL,
-	[UserId] [UNIQUEIDENTIFIER] NOT NULL,
+	[UserId] [UNIQUEIDENTIFIER] NOT NULL CONSTRAINT FK_T_User_Confirmation_Code_UserId_To_T_User_Id FOREIGN KEY REFERENCES [dbo].[T_User](Id),
 	[ConfirmationCode] [VARCHAR](150) NOT NULL,
 	[CreatedDateUTC] [DATETIME] CONSTRAINT DF_T_User_Confirmation_Code_CreatedDateUTC DEFAULT GETUTCDATE() NOT NULL,
 	CONSTRAINT [T_User_Confirmation_Code_Id] PRIMARY KEY CLUSTERED
