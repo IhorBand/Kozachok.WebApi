@@ -11,6 +11,8 @@ using Kozachok.Shared.Abstractions.Repositories;
 using Kozachok.Shared.DTO.Models;
 using Org.BouncyCastle.Asn1.Esf;
 using Kozachok.Domain.Commands.User;
+using Castle.Core.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Kozachok.Domain.Handlers.Events
 {
@@ -27,12 +29,15 @@ namespace Kozachok.Domain.Handlers.Events
     {
         private readonly MailConfiguration mailConfiguration;
         private readonly EndpointsConfiguration endpointsConfiguration;
+        private readonly ILogger<UserEventHandler> logger;
 
         public UserEventHandler(MailConfiguration mailConfiguration,
-            EndpointsConfiguration endpointsConfiguration)
+            EndpointsConfiguration endpointsConfiguration,
+            ILogger<UserEventHandler> logger)
         {
             this.mailConfiguration = mailConfiguration;
             this.endpointsConfiguration = endpointsConfiguration;
+            this.logger = logger;
         }
 
         public Task Handle(CreateUserEvent notification, CancellationToken cancellationToken)
@@ -49,12 +54,19 @@ namespace Kozachok.Domain.Handlers.Events
                 Text = $"Hello, {notification.Name}! Please, find your confirmation URL below. \n {confirmationUrl} \n\n Thank you."
             };
 
-            using (var smtpClient = new SmtpClient())
+            try
             {
-                smtpClient.Connect(mailConfiguration.SmtpHost, mailConfiguration.SmtpPort, false);
-                smtpClient.Authenticate(mailConfiguration.UserName, mailConfiguration.Password);
-                smtpClient.Send(mailMessage);
-                smtpClient.Disconnect(true);
+                using (var smtpClient = new SmtpClient())
+                {
+                    smtpClient.Connect(mailConfiguration.SmtpHost, mailConfiguration.SmtpPort, false);
+                    smtpClient.Authenticate(mailConfiguration.UserName, mailConfiguration.Password);
+                    smtpClient.Send(mailMessage);
+                    smtpClient.Disconnect(true);
+                }
+            }
+            catch(Exception ex)
+            {
+                logger.LogError(ex, "Cannot Send Email.");
             }
 
             return Task.CompletedTask;
@@ -80,12 +92,19 @@ namespace Kozachok.Domain.Handlers.Events
                 Text = $"Hello, {notification.Name}! Please, find your new confirmation URL below. \n {confirmationUrl} \n\n Thank you."
             };
 
-            using (var smtpClient = new SmtpClient())
+            try
             {
-                smtpClient.Connect(mailConfiguration.SmtpHost, mailConfiguration.SmtpPort, false);
-                smtpClient.Authenticate(mailConfiguration.UserName, mailConfiguration.Password);
-                smtpClient.Send(mailMessage);
-                smtpClient.Disconnect(true);
+                using (var smtpClient = new SmtpClient())
+                {
+                    smtpClient.Connect(mailConfiguration.SmtpHost, mailConfiguration.SmtpPort, false);
+                    smtpClient.Authenticate(mailConfiguration.UserName, mailConfiguration.Password);
+                    smtpClient.Send(mailMessage);
+                    smtpClient.Disconnect(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Cannot Send Email.");
             }
 
             return Task.CompletedTask;
@@ -111,12 +130,19 @@ namespace Kozachok.Domain.Handlers.Events
                 Text = $"Hello, {notification.Name}! Please, find your forget password URL below. \n {forgetPasswordUrl} \n\n Thank you."
             };
 
-            using (var smtpClient = new SmtpClient())
+            try
             {
-                smtpClient.Connect(mailConfiguration.SmtpHost, mailConfiguration.SmtpPort, false);
-                smtpClient.Authenticate(mailConfiguration.UserName, mailConfiguration.Password);
-                smtpClient.Send(mailMessage);
-                smtpClient.Disconnect(true);
+                using (var smtpClient = new SmtpClient())
+                {
+                    smtpClient.Connect(mailConfiguration.SmtpHost, mailConfiguration.SmtpPort, false);
+                    smtpClient.Authenticate(mailConfiguration.UserName, mailConfiguration.Password);
+                    smtpClient.Send(mailMessage);
+                    smtpClient.Disconnect(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Cannot Send Email.");
             }
 
             return Task.CompletedTask;
@@ -138,12 +164,19 @@ namespace Kozachok.Domain.Handlers.Events
                 Text = $"Hello, {notification.Name}! Please, find your Change Email URL below. \n {changeEmailConfirmationUrl} \n\n Thank you."
             };
 
-            using (var smtpClient = new SmtpClient())
+            try
             {
-                smtpClient.Connect(mailConfiguration.SmtpHost, mailConfiguration.SmtpPort, false);
-                smtpClient.Authenticate(mailConfiguration.UserName, mailConfiguration.Password);
-                smtpClient.Send(mailMessage);
-                smtpClient.Disconnect(true);
+                using (var smtpClient = new SmtpClient())
+                {
+                    smtpClient.Connect(mailConfiguration.SmtpHost, mailConfiguration.SmtpPort, false);
+                    smtpClient.Authenticate(mailConfiguration.UserName, mailConfiguration.Password);
+                    smtpClient.Send(mailMessage);
+                    smtpClient.Disconnect(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Cannot Send Email.");
             }
 
             return Task.CompletedTask;
