@@ -2,17 +2,8 @@
 using MediatR;
 using System.Threading.Tasks;
 using System.Threading;
-using MimeKit;
-using MailKit.Net.Smtp;
-using System.Security.Authentication;
 using Kozachok.Shared.DTO.Configuration;
-using System;
-using Kozachok.Shared.Abstractions.Repositories;
-using Kozachok.Shared.DTO.Models;
-using Org.BouncyCastle.Asn1.Esf;
-using Kozachok.Domain.Commands.User;
-using Castle.Core.Logging;
-using Microsoft.Extensions.Logging;
+using Kozachok.Domain.Emails;
 
 namespace Kozachok.Domain.Handlers.Events
 {
@@ -27,47 +18,25 @@ namespace Kozachok.Domain.Handlers.Events
         INotificationHandler<ForgetPasswordEvent>,
         INotificationHandler<SendChangeEmailConfirmationEvent>
     {
-        private readonly MailConfiguration mailConfiguration;
-        private readonly EndpointsConfiguration endpointsConfiguration;
-        private readonly ILogger<UserEventHandler> logger;
+        private readonly EmailService emailService;
 
-        public UserEventHandler(MailConfiguration mailConfiguration,
-            EndpointsConfiguration endpointsConfiguration,
-            ILogger<UserEventHandler> logger)
+        private readonly EndpointsConfiguration endpointsConfiguration;
+
+        public UserEventHandler(
+            EmailService emailService,
+            EndpointsConfiguration endpointsConfiguration)
         {
-            this.mailConfiguration = mailConfiguration;
+            this.emailService = emailService;
             this.endpointsConfiguration = endpointsConfiguration;
-            this.logger = logger;
         }
 
         public Task Handle(CreateUserEvent notification, CancellationToken cancellationToken)
         {
             var confirmationUrl = endpointsConfiguration.ConfirmationUrl.Replace("code=", $"code={notification.ConfirmationCode}");
 
-            //TODO: Move Email Jobs to another class
-            var mailMessage = new MimeMessage();
-            mailMessage.From.Add(new MailboxAddress(mailConfiguration.FromName, mailConfiguration.FromEmail));
-            mailMessage.To.Add(new MailboxAddress(notification.Name, notification.Email));
-            mailMessage.Subject = "Confirmation Email";
-            mailMessage.Body = new TextPart("plain")
-            {
-                Text = $"Hello, {notification.Name}! Please, find your confirmation URL below. \n {confirmationUrl} \n\n Thank you."
-            };
+            string htmlContent = $"<html><body><h1>Hello, {notification.Name}! Please, find your confirmation URL below. \n {confirmationUrl} \n\n Thank you.</h1></body></html>";
 
-            try
-            {
-                using (var smtpClient = new SmtpClient())
-                {
-                    smtpClient.Connect(mailConfiguration.SmtpHost, mailConfiguration.SmtpPort, false);
-                    smtpClient.Authenticate(mailConfiguration.UserName, mailConfiguration.Password);
-                    smtpClient.Send(mailMessage);
-                    smtpClient.Disconnect(true);
-                }
-            }
-            catch(Exception ex)
-            {
-                logger.LogError(ex, "Cannot Send Email.");
-            }
+            emailService.SendEmailAsync(notification.Email, htmlContent, "Confirmation Email");
 
             return Task.CompletedTask;
         }
@@ -80,32 +49,12 @@ namespace Kozachok.Domain.Handlers.Events
 
         public Task Handle(ResendActivationCodeEvent notification, CancellationToken cancellationToken)
         {
+
             var confirmationUrl = endpointsConfiguration.ConfirmationUrl.Replace("code=", $"code={notification.ConfirmationCode}");
 
-            //TODO: Move Email Jobs to another class
-            var mailMessage = new MimeMessage();
-            mailMessage.From.Add(new MailboxAddress(mailConfiguration.FromName, mailConfiguration.FromEmail));
-            mailMessage.To.Add(new MailboxAddress(notification.Name, notification.Email));
-            mailMessage.Subject = "Confirmation Email";
-            mailMessage.Body = new TextPart("plain")
-            {
-                Text = $"Hello, {notification.Name}! Please, find your new confirmation URL below. \n {confirmationUrl} \n\n Thank you."
-            };
+            string htmlContent = $"<html><body><h1>Hello, {notification.Name}! Please, find your new confirmation URL below. \n {confirmationUrl} \n\n Thank you.</h1></body></html>";
 
-            try
-            {
-                using (var smtpClient = new SmtpClient())
-                {
-                    smtpClient.Connect(mailConfiguration.SmtpHost, mailConfiguration.SmtpPort, false);
-                    smtpClient.Authenticate(mailConfiguration.UserName, mailConfiguration.Password);
-                    smtpClient.Send(mailMessage);
-                    smtpClient.Disconnect(true);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Cannot Send Email.");
-            }
+            emailService.SendEmailAsync(notification.Email, htmlContent, "Resend Confirmation Email");
 
             return Task.CompletedTask;
         }
@@ -120,30 +69,9 @@ namespace Kozachok.Domain.Handlers.Events
         {
             var forgetPasswordUrl = endpointsConfiguration.ForgetPasswordUrl.Replace("code=", $"code={notification.ForgetPasswordCode}");
 
-            //TODO: Move Email Jobs to another class
-            var mailMessage = new MimeMessage();
-            mailMessage.From.Add(new MailboxAddress(mailConfiguration.FromName, mailConfiguration.FromEmail));
-            mailMessage.To.Add(new MailboxAddress(notification.Name, notification.Email));
-            mailMessage.Subject = "Forget Password Email";
-            mailMessage.Body = new TextPart("plain")
-            {
-                Text = $"Hello, {notification.Name}! Please, find your forget password URL below. \n {forgetPasswordUrl} \n\n Thank you."
-            };
+            string htmlContent = $"<html><body><h1>Hello, {notification.Name}! Please, find your forget password URL below. \n {forgetPasswordUrl} \n\n Thank you.</h1></body></html>";
 
-            try
-            {
-                using (var smtpClient = new SmtpClient())
-                {
-                    smtpClient.Connect(mailConfiguration.SmtpHost, mailConfiguration.SmtpPort, false);
-                    smtpClient.Authenticate(mailConfiguration.UserName, mailConfiguration.Password);
-                    smtpClient.Send(mailMessage);
-                    smtpClient.Disconnect(true);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Cannot Send Email.");
-            }
+            emailService.SendEmailAsync(notification.Email, htmlContent, "Forget Password");
 
             return Task.CompletedTask;
         }
@@ -154,30 +82,9 @@ namespace Kozachok.Domain.Handlers.Events
         {
             var changeEmailConfirmationUrl = endpointsConfiguration.ChangeEmailConfirmationUrl.Replace("code=", $"code={notification.ConfirmationCode}");
 
-            //TODO: Move Email Jobs to another class
-            var mailMessage = new MimeMessage();
-            mailMessage.From.Add(new MailboxAddress(mailConfiguration.FromName, mailConfiguration.FromEmail));
-            mailMessage.To.Add(new MailboxAddress(notification.Name, notification.Email));
-            mailMessage.Subject = "Forget Password Email";
-            mailMessage.Body = new TextPart("plain")
-            {
-                Text = $"Hello, {notification.Name}! Please, find your Change Email URL below. \n {changeEmailConfirmationUrl} \n\n Thank you."
-            };
+            string htmlContent = $"<html><body><h1>Hello, {notification.Name}! Please, find your Change Email URL below. \n {changeEmailConfirmationUrl} \n\n Thank you.</h1></body></html>";
 
-            try
-            {
-                using (var smtpClient = new SmtpClient())
-                {
-                    smtpClient.Connect(mailConfiguration.SmtpHost, mailConfiguration.SmtpPort, false);
-                    smtpClient.Authenticate(mailConfiguration.UserName, mailConfiguration.Password);
-                    smtpClient.Send(mailMessage);
-                    smtpClient.Disconnect(true);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Cannot Send Email.");
-            }
+            emailService.SendEmailAsync(notification.Email, htmlContent, "Change Email");
 
             return Task.CompletedTask;
         }

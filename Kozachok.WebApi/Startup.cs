@@ -24,7 +24,7 @@ using Kozachok.Repository.Repositories.Common;
 using MediatR;
 using Kozachok.WebApi.Setup;
 using System.Reflection;
-using MimeKit.Cryptography;
+using Kozachok.Domain.Emails;
 
 namespace Kozachok.WebApi
 {
@@ -262,6 +262,7 @@ namespace Kozachok.WebApi
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IMediatorHandler, InMemoryBus>();
             services.AddScoped<IUser, UserControl>();
+            services.AddScoped<EmailService>();
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 

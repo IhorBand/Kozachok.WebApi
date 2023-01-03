@@ -89,7 +89,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
             Commit();
 
-            _ = bus.InvokeAsync(new CreateUserEvent(entity.Id, entity.Name, entity.Email, entity.Password, userConfirmationCode.ConfirmationCode));
+            await bus.InvokeAsync(new CreateUserEvent(entity.Id, entity.Name, entity.Email, entity.Password, userConfirmationCode.ConfirmationCode)).ConfigureAwait(false);
 
             return Unit.Value;
         }
@@ -225,7 +225,7 @@ namespace Kozachok.Domain.Handlers.Commands
             }
 
             Commit();
-            await bus.InvokeAsync(new ResendActivationCodeEvent(currentUser.Id, currentUser.Name, currentUser.Email, userConfirmationCode.ConfirmationCode));
+            await bus.InvokeAsync(new ResendActivationCodeEvent(currentUser.Id, currentUser.Name, currentUser.Email, userConfirmationCode.ConfirmationCode)).ConfigureAwait(false);
 
             return Unit.Value;
         }
@@ -306,7 +306,7 @@ namespace Kozachok.Domain.Handlers.Commands
             }
 
             Commit();
-            await bus.InvokeAsync(new SendForgetPasswordEmailEvent(currentUser.Id, currentUser.Name, currentUser.Email, userForgetPasswordCode.ConfirmationCode));
+            await bus.InvokeAsync(new SendForgetPasswordEmailEvent(currentUser.Id, currentUser.Name, currentUser.Email, userForgetPasswordCode.ConfirmationCode)).ConfigureAwait(false);
 
             return Unit.Value;
         }
@@ -391,7 +391,7 @@ namespace Kozachok.Domain.Handlers.Commands
             }
 
             Commit();
-            await bus.InvokeAsync(new SendChangeEmailConfirmationEvent(currentUser.Id, currentUser.Name, request.Email, userChangeEmailCode.ConfirmationCode));
+            await bus.InvokeAsync(new SendChangeEmailConfirmationEvent(currentUser.Id, currentUser.Name, request.Email, userChangeEmailCode.ConfirmationCode)).ConfigureAwait(false);
 
             return Unit.Value;
         }
