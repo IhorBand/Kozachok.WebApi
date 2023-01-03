@@ -91,7 +91,7 @@ namespace Kozachok.Domain.Handlers.Commands
             var fullFilePath = System.IO.Path.Combine(filePath, fileName);
             var fileUrl = fileServer.Url + fileServerConfiguration.UserAvatarPath + fileName;
 
-            var uploadedFile = new File(fileName, fileServer.Id, Shared.DTO.Enums.FileType.Image, extension, fullFilePath, fileUrl, false);
+            var uploadedFile = new File(fileName, fileServer.Id, Shared.DTO.Enums.FileType.Image, extension, fullFilePath, fileUrl, true);
             uploadedFile.SetSize(request.File.Length);
 
             await fileRepository.AddAsync(uploadedFile);
