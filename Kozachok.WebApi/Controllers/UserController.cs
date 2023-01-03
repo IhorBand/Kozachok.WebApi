@@ -71,6 +71,7 @@ namespace Kozachok.WebApi.Controllers
         }
 
         [HttpPut("SendChangeEmailConfirmation")]
+        [BearerAuthorization()]
         public async Task<IActionResult> SendChangeEmailConfirmation([FromBody] SendChangeEmailConfirmationCommand command)
         {
             await bus.SendAsync(command);
@@ -78,6 +79,7 @@ namespace Kozachok.WebApi.Controllers
         }
 
         [HttpPut("ActivateNewEmail")]
+        [BearerAuthorization()]
         public async Task<IActionResult> ActivateNewEmail([FromBody] ActivateNewEmailCommand command)
         {
             await bus.SendAsync(command);

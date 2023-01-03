@@ -104,7 +104,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var original = await userRepository.GetAsync(user.Id.Value);
 
-            if (original == null)
+            if (original == null || (original != null && original.Id == Guid.Empty))
             {
                 await bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;
@@ -130,11 +130,17 @@ namespace Kozachok.Domain.Handlers.Commands
 
         public async Task<Unit> Handle(ChangeUserPasswordCommand request, CancellationToken cancellationToken)
         {
-            var original = await userRepository.GetAsync(request.Id);
-
-            if (original == null)
+            if (user == null || (user != null && user.Id == null) || (user != null && user.Id != null && user.Id.Value == Guid.Empty))
             {
-                await bus.InvokeDomainNotificationAsync("Not found.");
+                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                return Unit.Value;
+            }
+
+            var original = await userRepository.GetAsync(user.Id.Value);
+
+            if (original == null || (original != null && original.Id == Guid.Empty))
+            {
+                await bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;
             }
 
@@ -167,7 +173,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var original = await userRepository.GetAsync(user.Id.Value);
 
-            if (original == null)
+            if (original == null || (original != null && original.Id == Guid.Empty))
             {
                 await bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;
@@ -194,7 +200,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var currentUser = await userRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
 
-            if (currentUser == null)
+            if (currentUser == null || (currentUser != null && currentUser.Id == Guid.Empty))
             {
                 await bus.InvokeDomainNotificationAsync("Cannot Send Activation Code.");
                 return Unit.Value;
@@ -244,7 +250,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var currentUser = await userRepository.GetAsync(userConfirmationCode.UserId);
 
-            if (currentUser == null)
+            if (currentUser == null || (currentUser != null && currentUser.Id == Guid.Empty))
             {
                 await bus.InvokeDomainNotificationAsync("Cannot Activate User.");
                 return Unit.Value;
@@ -281,7 +287,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var currentUser = await userRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
 
-            if (currentUser == null)
+            if (currentUser == null || (currentUser != null && currentUser.Id == Guid.Empty))
             {
                 await bus.InvokeDomainNotificationAsync("Cannot Send Forget Password Code.");
                 return Unit.Value;
@@ -327,7 +333,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var currentUser = await userRepository.GetAsync(userForgetPasswordCode.UserId);
 
-            if (currentUser == null)
+            if (currentUser == null || (currentUser != null && currentUser.Id == Guid.Empty))
             {
                 await bus.InvokeDomainNotificationAsync("Cannot Change Password for that User.");
                 return Unit.Value;
@@ -355,7 +361,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var currentUser = await userRepository.GetAsync(user.Id.Value);
 
-            if (currentUser == null)
+            if (currentUser == null || (currentUser != null && currentUser.Id == Guid.Empty))
             {
                 await bus.InvokeDomainNotificationAsync("User is not Authorized.");
                 return Unit.Value;
