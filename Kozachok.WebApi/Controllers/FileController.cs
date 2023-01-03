@@ -2,6 +2,7 @@
 using Kozachok.Domain.Commands.File;
 using Kozachok.Shared.Abstractions.Bus;
 using Kozachok.Shared.DTO.Common;
+using Kozachok.WebApi.Auth;
 using Kozachok.WebApi.Controllers.Common;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,7 @@ namespace Kozachok.WebApi.Controllers
         }
 
         [HttpPost("UpdateUserThumbnailImage")]
+        [BearerAuthorization]
         public async Task<IActionResult> UpdateUserThumbnailImage(IFormFile file)
         {
             var result = await bus.RequestAsync(new UpdateUserThumbnailImageCommand() { File = file });

@@ -69,5 +69,19 @@ namespace Kozachok.WebApi.Controllers
             await bus.SendAsync(command);
             return Response();
         }
+
+        [HttpPut("SendChangeEmailConfirmation")]
+        public async Task<IActionResult> SendChangeEmailConfirmation([FromBody] SendChangeEmailConfirmationCommand command)
+        {
+            await bus.SendAsync(command);
+            return Response();
+        }
+
+        [HttpPut("ActivateNewEmail")]
+        public async Task<IActionResult> ActivateNewEmail([FromBody] ActivateNewEmailCommand command)
+        {
+            await bus.SendAsync(command);
+            return Response();
+        }
     }
 }

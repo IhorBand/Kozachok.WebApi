@@ -1,10 +1,9 @@
 ﻿using Kozachok.Shared.Abstractions.Commands;
-using System;
 
 namespace Kozachok.Domain.Commands.User
 {
-    public class UpdateUserCommand : Command
+    public class ActivateNewEmailCommand : Command
     {
-        public string Name { get; set; }
+        public string ChangeEmailCode { get; set; }
     }
 }
