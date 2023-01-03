@@ -370,7 +370,8 @@ namespace Kozachok.Domain.Handlers.Commands
             request
                 .IsNullEmptyOrWhitespace(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Please, provide E-mail."))
                 .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid E-mail."))
-                .Is(e => userRepository.AnyAsync(u => u.Email == e.Email).Result, async () => await bus.InvokeDomainNotificationAsync("E-mail already exists."));
+                .Is(e => userRepository.AnyAsync(u => u.Email == e.Email).Result, async () => await bus.InvokeDomainNotificationAsync("E-mail already exists."))
+                .Is(e => e.Email == user.Email, async () => await bus.InvokeDomainNotificationAsync("Please, provide new e-mail."));
 
             if (!IsValidOperation())
             {

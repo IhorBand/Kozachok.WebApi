@@ -51,7 +51,7 @@ namespace Kozachok.WebApi.Services.Implementation
                 {
                     if (string.IsNullOrWhiteSpace(model.RefreshToken))
                     {
-                        return new AuthorizeUserOutputModel { IsAuthorized = false, IsActive = false, Message = "Email or Password are invalid!" };
+                        return null;
                     }
 
                     var storedToken = cache.GetString(model.RefreshToken);
@@ -76,7 +76,7 @@ namespace Kozachok.WebApi.Services.Implementation
             }
             else
             {
-                return new AuthorizeUserOutputModel { IsAuthorized = false, IsActive = false, Message = "Email or Password are invalid!" };
+                return null;
             }
 
             var now = DateTime.UtcNow;

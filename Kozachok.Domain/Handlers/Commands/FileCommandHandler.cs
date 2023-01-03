@@ -100,31 +100,43 @@ namespace Kozachok.Domain.Handlers.Commands
 
             currentUser.SetThumbnailImageFileId(uploadedFile.Id);
             await userRepository.UpdateAsync(currentUser);
-
-            File previousImage = null;
-            if (oldImageFileId != null)
-            {
-                previousImage = await fileRepository.GetAsync(oldImageFileId.Value);
-                if (previousImage != null)
-                {
-                    await fileRepository.DeleteAsync(previousImage.Id);
-                }
-            }
-
+            
             try
-            {
+            { 
                 Commit();
 
-                using (var fileStream = new System.IO.FileStream(fullFilePath, System.IO.FileMode.Create))
+                File previousImage = null;
+                if (oldImageFileId != null)
                 {
-                    await request.File.CopyToAsync(fileStream);
+                    previousImage = await fileRepository.GetAsync(oldImageFileId.Value);
+                    if (previousImage != null)
+                    {
+                        await fileRepository.DeleteAsync(previousImage.Id);
+                    }
                 }
 
-                if (previousImage != null)
+                try
                 {
-                    System.IO.File.Delete(previousImage.FullPath);
-                }
+                    Commit();
 
+                    using (var fileStream = new System.IO.FileStream(fullFilePath, System.IO.FileMode.Create))
+                    {
+                        await request.File.CopyToAsync(fileStream);
+                    }
+
+                    if (previousImage != null)
+                    {
+                        System.IO.File.Delete(previousImage.FullPath);
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    await bus.InvokeDomainNotificationAsync("Cannot Update User's Thumbnail Image.");
+                    var userIdExStr = user != null ? user.Id.ToString() : "Unauthorized User";
+                    logger.LogError(ex, $"Cannot Update User's Thumbnail Image. UserId: {userIdExStr}");
+                    throw;
+                }
             }
             catch(Exception ex)
             {
