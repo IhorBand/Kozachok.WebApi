@@ -22,7 +22,8 @@ namespace Kozachok.Domain.Handlers.Events
         INotificationHandler<ResendActivationCodeEvent>,
         INotificationHandler<ActivateUserEvent>,
         INotificationHandler<SendForgetPasswordEmailEvent>,
-        INotificationHandler<ForgetPasswordEvent>
+        INotificationHandler<ForgetPasswordEvent>,
+        INotificationHandler<SendChangeEmailConfirmationEvent>
     {
         private readonly MailConfiguration mailConfiguration;
         private readonly EndpointsConfiguration endpointsConfiguration;
@@ -122,5 +123,30 @@ namespace Kozachok.Domain.Handlers.Events
         }
 
         public Task Handle(ForgetPasswordEvent notification, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task Handle(SendChangeEmailConfirmationEvent notification, CancellationToken cancellationToken)
+        {
+            var changeEmailConfirmationUrl = endpointsConfiguration.ChangeEmailConfirmationUrl.Replace("code=", $"code={notification.ConfirmationCode}");
+
+            //TODO: Move Email Jobs to another class
+            var mailMessage = new MimeMessage();
+            mailMessage.From.Add(new MailboxAddress(mailConfiguration.FromName, mailConfiguration.FromEmail));
+            mailMessage.To.Add(new MailboxAddress(notification.Name, notification.Email));
+            mailMessage.Subject = "Forget Password Email";
+            mailMessage.Body = new TextPart("plain")
+            {
+                Text = $"Hello, {notification.Name}! Please, find your Change Email URL below. \n {changeEmailConfirmationUrl} \n\n Thank you."
+            };
+
+            using (var smtpClient = new SmtpClient())
+            {
+                smtpClient.Connect(mailConfiguration.SmtpHost, mailConfiguration.SmtpPort, false);
+                smtpClient.Authenticate(mailConfiguration.UserName, mailConfiguration.Password);
+                smtpClient.Send(mailMessage);
+                smtpClient.Disconnect(true);
+            }
+
+            return Task.CompletedTask;
+        }
     }
 }

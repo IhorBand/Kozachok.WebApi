@@ -30,13 +30,14 @@ namespace Kozachok.Shared.DTO.Models
         public virtual Guid? ThumbnailImageFileId { get; private set; }
         public virtual DateTime CreatedDateUTC { get; private set; }
 
-        public void UpdateInfo(string name, string email)
+        public void UpdateInfo(string name)
         {
             Name = name;
-            Email = email;
         }
 
         public void SetThumbnailImageFileId(Guid fileId) => ThumbnailImageFileId = fileId;
+
+        public void ChangeEmail(string email) => Email = email;
 
         public void ChangePassword(string password) => Password = password.Encrypt();
 

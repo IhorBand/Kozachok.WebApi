@@ -12,6 +12,7 @@ using Kozachok.Utils.Validation;
 using Kozachok.Shared.DTO.Configuration;
 using Kozachok.Shared.Abstractions.Identity;
 using Kozachok.Domain.Commands.File;
+using Microsoft.Extensions.Logging;
 
 namespace Kozachok.Domain.Handlers.Commands
 {
@@ -25,6 +26,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
         private readonly FileServerConfiguration fileServerConfiguration;
         private readonly IUser user;
+        private readonly ILogger<FileCommandHandler> logger;
 
         public FileCommandHandler(
             IUnitOfWork uow,
@@ -34,7 +36,8 @@ namespace Kozachok.Domain.Handlers.Commands
             IFileRepository fileRepository,
             IUserRepository userRepository,
             FileServerConfiguration fileServerConfiguration,
-            IUser user
+            IUser user,
+            ILogger<FileCommandHandler> logger
         )
         : base(
                 uow,
@@ -47,6 +50,7 @@ namespace Kozachok.Domain.Handlers.Commands
             this.userRepository = userRepository;
             this.fileServerConfiguration = fileServerConfiguration;
             this.user = user;
+            this.logger = logger;
         }
 
         public async Task<File> Handle(UpdateUserThumbnailImageCommand request, CancellationToken cancellationToken)
@@ -75,6 +79,12 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var fileServer = await fileServerRepository.FirstOrDefaultAsync(fs => fs.IsActive);
 
+            if (fileServer == null || (fileServer != null && fileServer.Id == Guid.Empty))
+            {
+                await bus.InvokeDomainNotificationAsync("No available file server at the moment.");
+                return null;
+            }
+
             var filePath = fileServer.Path + fileServerConfiguration.UserAvatarPath;
             var extension = System.IO.Path.GetExtension(request.File.FileName);
             var fileName = Guid.NewGuid().ToString().Replace("-", "") + extension;
@@ -86,26 +96,42 @@ namespace Kozachok.Domain.Handlers.Commands
 
             await fileRepository.AddAsync(uploadedFile);
 
-            if (currentUser.ThumbnailImageFileId != null)
-            {
-                var previousImage = await fileRepository.GetAsync(currentUser.ThumbnailImageFileId.Value);
-                if (previousImage != null)
-                {
-                    System.IO.File.Delete(previousImage.FullPath);
-
-                    await fileRepository.DeleteAsync(previousImage.Id);
-                }
-            }
+            var oldImageFileId = currentUser.ThumbnailImageFileId;
 
             currentUser.SetThumbnailImageFileId(uploadedFile.Id);
             await userRepository.UpdateAsync(currentUser);
 
-            using (var fileStream = new System.IO.FileStream(fullFilePath, System.IO.FileMode.Create))
+            File previousImage = null;
+            if (oldImageFileId != null)
             {
-                await request.File.CopyToAsync(fileStream);
+                previousImage = await fileRepository.GetAsync(oldImageFileId.Value);
+                if (previousImage != null)
+                {
+                    await fileRepository.DeleteAsync(previousImage.Id);
+                }
             }
 
-            Commit();
+            try
+            {
+                Commit();
+
+                using (var fileStream = new System.IO.FileStream(fullFilePath, System.IO.FileMode.Create))
+                {
+                    await request.File.CopyToAsync(fileStream);
+                }
+
+                if (previousImage != null)
+                {
+                    System.IO.File.Delete(previousImage.FullPath);
+                }
+
+            }
+            catch(Exception ex)
+            {
+                await bus.InvokeDomainNotificationAsync("Cannot Update User's Thumbnail Image.");
+                var userIdExStr = user != null ? user.Id.ToString() : "Unauthorized User";
+                logger.LogError(ex, $"Cannot Update User's Thumbnail Image. UserId: {userIdExStr}");
+            }
 
             return uploadedFile;
         }
