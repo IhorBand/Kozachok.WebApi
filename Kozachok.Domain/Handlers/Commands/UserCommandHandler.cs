@@ -89,7 +89,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
             Commit();
 
-            _ = bus.InvokeAsync(new CreateUserEvent(entity.Id, entity.Name, entity.Email, entity.Password, userConfirmationCode.ConfirmationCode));
+            await bus.InvokeAsync(new CreateUserEvent(entity.Id, entity.Name, entity.Email, entity.Password, userConfirmationCode.ConfirmationCode)).ConfigureAwait(false);
 
             return Unit.Value;
         }
@@ -225,7 +225,7 @@ namespace Kozachok.Domain.Handlers.Commands
             }
 
             Commit();
-            await bus.InvokeAsync(new ResendActivationCodeEvent(currentUser.Id, currentUser.Name, currentUser.Email, userConfirmationCode.ConfirmationCode));
+            await bus.InvokeAsync(new ResendActivationCodeEvent(currentUser.Id, currentUser.Name, currentUser.Email, userConfirmationCode.ConfirmationCode)).ConfigureAwait(false);
 
             return Unit.Value;
         }
@@ -306,7 +306,7 @@ namespace Kozachok.Domain.Handlers.Commands
             }
 
             Commit();
-            await bus.InvokeAsync(new SendForgetPasswordEmailEvent(currentUser.Id, currentUser.Name, currentUser.Email, userForgetPasswordCode.ConfirmationCode));
+            await bus.InvokeAsync(new SendForgetPasswordEmailEvent(currentUser.Id, currentUser.Name, currentUser.Email, userForgetPasswordCode.ConfirmationCode)).ConfigureAwait(false);
 
             return Unit.Value;
         }
@@ -370,7 +370,8 @@ namespace Kozachok.Domain.Handlers.Commands
             request
                 .IsNullEmptyOrWhitespace(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Please, provide E-mail."))
                 .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid E-mail."))
-                .Is(e => userRepository.AnyAsync(u => u.Email == e.Email).Result, async () => await bus.InvokeDomainNotificationAsync("E-mail already exists."));
+                .Is(e => userRepository.AnyAsync(u => u.Email == e.Email).Result, async () => await bus.InvokeDomainNotificationAsync("E-mail already exists."))
+                .Is(e => e.Email == user.Email, async () => await bus.InvokeDomainNotificationAsync("Please, provide new e-mail."));
 
             if (!IsValidOperation())
             {
@@ -391,7 +392,7 @@ namespace Kozachok.Domain.Handlers.Commands
             }
 
             Commit();
-            await bus.InvokeAsync(new SendChangeEmailConfirmationEvent(currentUser.Id, currentUser.Name, request.Email, userChangeEmailCode.ConfirmationCode));
+            await bus.InvokeAsync(new SendChangeEmailConfirmationEvent(currentUser.Id, currentUser.Name, request.Email, userChangeEmailCode.ConfirmationCode)).ConfigureAwait(false);
 
             return Unit.Value;
         }
