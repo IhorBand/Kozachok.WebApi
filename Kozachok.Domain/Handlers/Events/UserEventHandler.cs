@@ -22,16 +22,13 @@ namespace Kozachok.Domain.Handlers.Events
     {
         private readonly EmailService emailService;
         private readonly EndpointsConfiguration endpointsConfiguration;
-        private readonly MailConfiguration mailConfiguration;
 
         public UserEventHandler(
             EmailService emailService,
-            EndpointsConfiguration endpointsConfiguration,
-            MailConfiguration mailConfiguration)
+            EndpointsConfiguration endpointsConfiguration)
         {
             this.emailService = emailService;
             this.endpointsConfiguration = endpointsConfiguration;
-            this.mailConfiguration = mailConfiguration;
         }
 
         public Task Handle(CreateUserEvent notification, CancellationToken cancellationToken)
