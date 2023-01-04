@@ -71,15 +71,6 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var entity = new User(request.Name, request.Email, request.Password, false);
 
-            if (request.ThumbnailImageFileId != null && request.ThumbnailImageFileId.Value != Guid.Empty)
-            {
-                var file = await fileRepository.GetAsync(request.ThumbnailImageFileId.Value);
-                if (file != null)
-                {
-                    entity.SetThumbnailImageFileId(request.ThumbnailImageFileId.Value);
-                }
-            }
-
             await userRepository.AddAsync(entity);
 
             var confirmationCodeStr = entity.Id.ToString().Replace("-", "") + Guid.NewGuid().ToString().Replace("-", "");

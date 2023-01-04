@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using System.Threading;
 using Kozachok.Shared.DTO.Configuration;
 using Kozachok.Domain.Emails;
+using System.Collections.Generic;
+using Kozachok.Shared.DTO.Email;
 
 namespace Kozachok.Domain.Handlers.Events
 {
@@ -19,24 +21,30 @@ namespace Kozachok.Domain.Handlers.Events
         INotificationHandler<SendChangeEmailConfirmationEvent>
     {
         private readonly EmailService emailService;
-
         private readonly EndpointsConfiguration endpointsConfiguration;
+        private readonly MailConfiguration mailConfiguration;
 
         public UserEventHandler(
             EmailService emailService,
-            EndpointsConfiguration endpointsConfiguration)
+            EndpointsConfiguration endpointsConfiguration,
+            MailConfiguration mailConfiguration)
         {
             this.emailService = emailService;
             this.endpointsConfiguration = endpointsConfiguration;
+            this.mailConfiguration = mailConfiguration;
         }
 
         public Task Handle(CreateUserEvent notification, CancellationToken cancellationToken)
         {
             var confirmationUrl = endpointsConfiguration.ConfirmationUrl.Replace("code=", $"code={notification.ConfirmationCode}");
 
-            string htmlContent = $"<html><body><h1>Hello, {notification.Name}! Please, find your confirmation URL below. \n {confirmationUrl} \n\n Thank you.</h1></body></html>";
+            var parameters = new Dictionary<string, string>()
+            {
+                {EmailParameters.UserName, notification.Name},
+                {EmailParameters.ConfirmationEmailUrl, confirmationUrl}
+            };
 
-            emailService.SendEmailAsync(notification.Email, htmlContent, "Confirmation Email");
+            emailService.SendEmailTemplateAsync(notification.Email, EmailTemplates.EmailConfirmation, parameters);
 
             return Task.CompletedTask;
         }
@@ -52,9 +60,13 @@ namespace Kozachok.Domain.Handlers.Events
 
             var confirmationUrl = endpointsConfiguration.ConfirmationUrl.Replace("code=", $"code={notification.ConfirmationCode}");
 
-            string htmlContent = $"<html><body><h1>Hello, {notification.Name}! Please, find your new confirmation URL below. \n {confirmationUrl} \n\n Thank you.</h1></body></html>";
+            var parameters = new Dictionary<string, string>()
+            {
+                {EmailParameters.UserName, notification.Name},
+                {EmailParameters.ConfirmationEmailUrl, confirmationUrl}
+            };
 
-            emailService.SendEmailAsync(notification.Email, htmlContent, "Resend Confirmation Email");
+            emailService.SendEmailTemplateAsync(notification.Email, EmailTemplates.EmailConfirmation, parameters);
 
             return Task.CompletedTask;
         }
@@ -69,9 +81,13 @@ namespace Kozachok.Domain.Handlers.Events
         {
             var forgetPasswordUrl = endpointsConfiguration.ForgetPasswordUrl.Replace("code=", $"code={notification.ForgetPasswordCode}");
 
-            string htmlContent = $"<html><body><h1>Hello, {notification.Name}! Please, find your forget password URL below. \n {forgetPasswordUrl} \n\n Thank you.</h1></body></html>";
+            var parameters = new Dictionary<string, string>()
+            {
+                {EmailParameters.UserName, notification.Name},
+                {EmailParameters.ConfirmationEmailUrl, forgetPasswordUrl}
+            };
 
-            emailService.SendEmailAsync(notification.Email, htmlContent, "Forget Password");
+            emailService.SendEmailTemplateAsync(notification.Email, EmailTemplates.PasswordReset, parameters);
 
             return Task.CompletedTask;
         }
@@ -82,9 +98,13 @@ namespace Kozachok.Domain.Handlers.Events
         {
             var changeEmailConfirmationUrl = endpointsConfiguration.ChangeEmailConfirmationUrl.Replace("code=", $"code={notification.ConfirmationCode}");
 
-            string htmlContent = $"<html><body><h1>Hello, {notification.Name}! Please, find your Change Email URL below. \n {changeEmailConfirmationUrl} \n\n Thank you.</h1></body></html>";
+            var parameters = new Dictionary<string, string>()
+            {
+                {EmailParameters.UserName, notification.Name},
+                {EmailParameters.ConfirmationEmailUrl, changeEmailConfirmationUrl}
+            };
 
-            emailService.SendEmailAsync(notification.Email, htmlContent, "Change Email");
+            emailService.SendEmailTemplateAsync(notification.Email, EmailTemplates.EmailReset, parameters);
 
             return Task.CompletedTask;
         }
