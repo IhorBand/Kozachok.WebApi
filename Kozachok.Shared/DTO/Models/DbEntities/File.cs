@@ -2,7 +2,7 @@
 using Kozachok.Shared.DTO.Enums;
 using System;
 
-namespace Kozachok.Shared.DTO.Models
+namespace Kozachok.Shared.DTO.Models.DbEntities
 {
     public class File : Entity
     {
@@ -13,8 +13,8 @@ namespace Kozachok.Shared.DTO.Models
         }
 
         public File(
-            string name, 
-            Guid fileServerId, 
+            string name,
+            Guid fileServerId,
             FileType fileTypeId,
             string extension,
             string fullPath,

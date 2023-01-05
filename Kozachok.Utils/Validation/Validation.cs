@@ -32,6 +32,16 @@ namespace Kozachok.Utils.Validation
             return o;
         }
 
+        public static TSource IsInvalidGuid<TSource>(this TSource o, Expression<Func<TSource, Guid>> expression, Action action)
+        {
+            var value = expression.Compile()(o);
+
+            if (value == null || (value != null && value == Guid.Empty))
+                action();
+
+            return o;
+        }
+
         public static TSource IsLessThan<TSource>(this TSource o, Expression<Func<TSource, int>> expression, int targetValue, Action action)
         {
             var value = expression.Compile()(o);

@@ -2,7 +2,7 @@
 using Kozachok.Shared.DTO.Common;
 using System;
 
-namespace Kozachok.Shared.DTO.Models
+namespace Kozachok.Shared.DTO.Models.DbEntities
 {
     public class StoredEvent : Entity
     {
