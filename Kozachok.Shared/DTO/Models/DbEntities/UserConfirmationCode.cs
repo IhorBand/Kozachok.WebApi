@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Kozachok.Shared.DTO.Models
+namespace Kozachok.Shared.DTO.Models.DbEntities
 {
     public class UserConfirmationCode : Entity
     {

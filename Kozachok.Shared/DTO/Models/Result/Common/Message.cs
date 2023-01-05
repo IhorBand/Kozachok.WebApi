@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Kozachok.Shared.DTO.Models.Result
+﻿namespace Kozachok.Shared.DTO.Models.Result.Common
 {
     public class Message<T>
     {

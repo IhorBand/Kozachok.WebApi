@@ -3,7 +3,6 @@ using Kozachok.Shared.Abstractions.Bus;
 using Kozachok.Shared.Abstractions.Repositories.Common;
 using Kozachok.Shared.Abstractions.Repositories;
 using Kozachok.Shared.DTO.Common;
-using Kozachok.Shared.DTO.Models;
 using MediatR;
 using System;
 using System.Threading.Tasks;
@@ -13,6 +12,7 @@ using Kozachok.Shared.DTO.Configuration;
 using Kozachok.Shared.Abstractions.Identity;
 using Kozachok.Domain.Commands.File;
 using Microsoft.Extensions.Logging;
+using Kozachok.Shared.DTO.Models.DbEntities;
 
 namespace Kozachok.Domain.Handlers.Commands
 {
@@ -63,7 +63,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return null;
             }
 
-            if (user.Id == null)
+            if (IsUserAuthorized(user) == false)
             {
                 await bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return null;

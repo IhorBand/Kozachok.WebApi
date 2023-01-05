@@ -1,6 +1,6 @@
 ﻿using Kozachok.Repository.Config;
 using Kozachok.Shared.Abstractions.Mapping;
-using Kozachok.Shared.DTO.Models;
+using Kozachok.Shared.DTO.Models.DbEntities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

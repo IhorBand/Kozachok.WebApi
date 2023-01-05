@@ -7,11 +7,11 @@ using System.Threading;
 using Kozachok.Utils.Validation;
 using Kozachok.Shared.Abstractions.Repositories.Common;
 using Kozachok.Shared.Abstractions.Repositories;
-using Kozachok.Shared.DTO.Models;
 using Kozachok.Shared.Abstractions.Bus;
 using Kozachok.Shared.DTO.Common;
 using System;
 using Kozachok.Shared.Abstractions.Identity;
+using Kozachok.Shared.DTO.Models.DbEntities;
 
 namespace Kozachok.Domain.Handlers.Commands
 {
@@ -87,7 +87,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
         public async Task<Unit> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
         {
-            if(user == null || (user != null && user.Id == null) || (user != null && user.Id != null && user.Id.Value == Guid.Empty))
+            if (IsUserAuthorized(user) == false)
             {
                 await bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;
@@ -121,7 +121,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
         public async Task<Unit> Handle(ChangeUserPasswordCommand request, CancellationToken cancellationToken)
         {
-            if (user == null || (user != null && user.Id == null) || (user != null && user.Id != null && user.Id.Value == Guid.Empty))
+            if (IsUserAuthorized(user) == false)
             {
                 await bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;
@@ -156,7 +156,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
         public async Task<Unit> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
         {
-            if (user == null || (user != null && user.Id == null) || (user != null && user.Id != null && user.Id.Value == Guid.Empty))
+            if (IsUserAuthorized(user) == false)
             {
                 await bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;
@@ -344,7 +344,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
         public async Task<Unit> Handle(SendChangeEmailConfirmationCommand request, CancellationToken cancellationToken)
         {
-            if (user == null || (user != null && user.Id == null) || (user != null && user.Id != null && user.Id.Value == Guid.Empty))
+            if (IsUserAuthorized(user) == false)
             {
                 await bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;

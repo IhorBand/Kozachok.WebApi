@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using Kozachok.Domain.Commands.User;
+using Kozachok.Domain.Queries.User;
 using Kozachok.Shared.Abstractions.Bus;
 using Kozachok.Shared.DTO.Common;
+using Kozachok.Shared.DTO.Models.Result.User;
 using Kozachok.WebApi.Auth;
 using Kozachok.WebApi.Controllers.Common;
 using MediatR;
@@ -84,6 +86,15 @@ namespace Kozachok.WebApi.Controllers
         {
             await bus.SendAsync(command);
             return Response();
+        }
+
+        [HttpGet("{userId}")]
+        [BearerAuthorization]
+        public async Task<IActionResult> GetUser([FromRoute(Name = "userId")] Guid userId)
+        {
+            var result = await bus.RequestAsync<UserDetails>(new GetUserDetailQuery() { UserId = userId });
+            var model = mapper.Map<Models.User.UserDetails>(result);
+            return Response(model);
         }
     }
 }

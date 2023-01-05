@@ -1,7 +1,7 @@
 ﻿using Kozachok.Repository.Contexts;
 using Kozachok.Repository.Repositories.Common;
 using Kozachok.Shared.Abstractions.Repositories;
-using Kozachok.Shared.DTO.Models;
+using Kozachok.Shared.DTO.Models.DbEntities;
 using System;
 using System.Collections.Generic;
 using System.Text;

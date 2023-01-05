@@ -12,7 +12,9 @@ namespace Kozachok.WebApi.Infrastructure.MappingProfiles
                 .ForMember(dest => dest.Message, opt => opt.MapFrom(src => src.Message))
                 .ForMember(dest => dest.DateTime, opt => opt.MapFrom(src => src.DateTime));
 
-            CreateTwoWayMap<Shared.DTO.Models.File, Models.File.File>();
+            CreateTwoWayMap<Shared.DTO.Models.DbEntities.File, Models.File.File>();
+            CreateTwoWayMap<Shared.DTO.Models.DbEntities.User, Models.User.User>();
+            CreateTwoWayMap<Shared.DTO.Models.Result.User.UserDetails, Models.User.UserDetails>();
         }
 
         public void CreateTwoWayMap<T1, T2>()
