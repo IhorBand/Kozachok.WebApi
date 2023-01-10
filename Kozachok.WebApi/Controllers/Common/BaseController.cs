@@ -28,6 +28,17 @@ namespace Kozachok.WebApi.Controllers.Common
 
         protected bool IsValidOperation() => !notifications.HasNotifications();
 
+        protected new IActionResult Response<T>(object? result)
+        {
+            if(result != null)
+            {
+                var model = mapper.Map<T>(result);
+                return Response(model);
+            }
+
+            return Response();
+        }
+
         protected new IActionResult Response(object? result = null)
         {
             if (IsValidOperation())

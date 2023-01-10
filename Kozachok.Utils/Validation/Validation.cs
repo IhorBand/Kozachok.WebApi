@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Linq.Expressions;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
+using System.Reflection;
+using System.Linq;
 
 namespace Kozachok.Utils.Validation
 {
@@ -42,11 +45,35 @@ namespace Kozachok.Utils.Validation
             return o;
         }
 
+        public static TSource IsMatchMaxLength<TSource>(this TSource o, Expression<Func<TSource, string>> propertyExpression, Action action)
+        {
+            var value = propertyExpression.Compile()(o);
+
+            var expression = (MemberExpression)propertyExpression.Body;
+            var propertyInfo = (PropertyInfo)expression.Member;
+            var attr = propertyInfo.GetCustomAttributes(typeof(MaxLengthAttribute), true).FirstOrDefault() as MaxLengthAttribute;
+
+            if(attr != null && attr.Length > 0 && value.Length >= attr.Length)
+                action();
+
+            return o;
+        }
+
         public static TSource IsLessThan<TSource>(this TSource o, Expression<Func<TSource, int>> expression, int targetValue, Action action)
         {
             var value = expression.Compile()(o);
 
             if (value < targetValue)
+                action();
+
+            return o;
+        }
+
+        public static TSource IsBiggerThan<TSource>(this TSource o, Expression<Func<TSource, int>> expression, int targetValue, Action action)
+        {
+            var value = expression.Compile()(o);
+
+            if (value > targetValue)
                 action();
 
             return o;

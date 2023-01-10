@@ -30,7 +30,6 @@ namespace Kozachok.Domain.Handlers.Commands
     {
         private readonly IUserRepository userRepository;
         private readonly IUserConfirmationCodeRepository userConfirmationCodeRepository;
-        private readonly IFileRepository fileRepository;
 
         private readonly IUser user;
 
@@ -40,7 +39,6 @@ namespace Kozachok.Domain.Handlers.Commands
             INotificationHandler<DomainNotification> notifications,
             IUserRepository userRepository,
             IUserConfirmationCodeRepository userConfirmationCodeRepository,
-            IFileRepository fileRepository,
             IUser user
         )
         : base(
@@ -51,7 +49,6 @@ namespace Kozachok.Domain.Handlers.Commands
         {
             this.userRepository = userRepository;
             this.userConfirmationCodeRepository = userConfirmationCodeRepository;
-            this.fileRepository = fileRepository;
             this.user = user;
         }
 
@@ -61,6 +58,10 @@ namespace Kozachok.Domain.Handlers.Commands
                 .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid e-mail."))
                 .IsNullEmptyOrWhitespace(e => e.Name, async () => await bus.InvokeDomainNotificationAsync("Invalid name."))
                 .IsNullEmptyOrWhitespace(e => e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password."))
+                .IsMatchMaxLength(e => e.Name, async () => await bus.InvokeDomainNotificationAsync("Name is too big."))
+                .IsMatchMaxLength(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Email is too big."))
+                .IsMatchMaxLength(e => e.Password, async () => await bus.InvokeDomainNotificationAsync("Password is too big."))
+                .IsMatchMaxLength(e => e.PasswordConfirmation, async () => await bus.InvokeDomainNotificationAsync("Password Confirmation is too big."))
                 .Is(e => e.PasswordConfirmation != e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password confirmation."))
                 .Is(e => userRepository.AnyAsync(u => u.Email == request.Email).Result, async () => await bus.InvokeDomainNotificationAsync("E-mail already exists."));
 
@@ -102,7 +103,8 @@ namespace Kozachok.Domain.Handlers.Commands
             }
 
             request
-                .IsNullEmptyOrWhitespace(e => e.Name, async () => await bus.InvokeDomainNotificationAsync("Invalid name."));
+                .IsNullEmptyOrWhitespace(e => e.Name, async () => await bus.InvokeDomainNotificationAsync("Invalid name."))
+                .IsMatchMaxLength(e => e.Name, async () => await bus.InvokeDomainNotificationAsync("Name is too big."));
 
             if (!IsValidOperation())
             {
@@ -137,7 +139,10 @@ namespace Kozachok.Domain.Handlers.Commands
 
             request
                 .IsNullEmptyOrWhitespace(e => e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password."))
-                .Is(e => e.PasswordConfirmation != e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password confirmation."));
+                .Is(e => e.PasswordConfirmation != e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password confirmation."))
+                .IsMatchMaxLength(e => e.Password, async () => await bus.InvokeDomainNotificationAsync("Password is too big."))
+                .IsMatchMaxLength(e => e.PasswordConfirmation, async () => await bus.InvokeDomainNotificationAsync("PasswordConfirmation is too big."))
+                .Is(e => !original.CheckPassword(e.OldPassword), async () => await bus.InvokeDomainNotificationAsync("Old Password is incorrect."));
 
             if (!IsValidOperation())
             {
@@ -182,7 +187,8 @@ namespace Kozachok.Domain.Handlers.Commands
         {
             request
                 .IsNullEmptyOrWhitespace(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Please, provide E-mail."))
-                .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid E-mail."));
+                .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid E-mail."))
+                .IsMatchMaxLength(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("E-mail is too big."));
             
             if (!IsValidOperation())
             {
@@ -269,7 +275,8 @@ namespace Kozachok.Domain.Handlers.Commands
         {
             request
                 .IsNullEmptyOrWhitespace(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Please, provide E-mail."))
-                .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid E-mail."));
+                .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid E-mail."))
+                .IsMatchMaxLength(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("E-mail is too big."));
 
             if (!IsValidOperation())
             {
@@ -307,6 +314,7 @@ namespace Kozachok.Domain.Handlers.Commands
             request
                 .IsNullEmptyOrWhitespace(e => e.ForgetPasswordCode, async () => await bus.InvokeDomainNotificationAsync("Please, provide Forget Password Code."))
                 .IsNullEmptyOrWhitespace(e => e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password."))
+                .IsMatchMaxLength(e => e.Password, async () => await bus.InvokeDomainNotificationAsync("Password is too big."))
                 .Is(e => e.PasswordConfirmation != e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password confirmation."));
 
             if (!IsValidOperation())
@@ -361,6 +369,7 @@ namespace Kozachok.Domain.Handlers.Commands
             request
                 .IsNullEmptyOrWhitespace(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Please, provide E-mail."))
                 .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid E-mail."))
+                .IsMatchMaxLength(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("E-mail is too big."))
                 .Is(e => userRepository.AnyAsync(u => u.Email == e.Email).Result, async () => await bus.InvokeDomainNotificationAsync("E-mail already exists."))
                 .Is(e => e.Email == user.Email, async () => await bus.InvokeDomainNotificationAsync("Please, provide new e-mail."));
 
