@@ -4,17 +4,19 @@ namespace Kozachok.Shared.DTO.Common
 {
     public class PagedResult<TEntity>
     {
-        public PagedResult(int currentPage, int totalPages, int totalItems, List<TEntity> items)
+        public PagedResult(int currentPage, int totalPages, int totalItems, int pageSize, List<TEntity> items)
         {
             this.CurrentPage = currentPage;
             this.TotalPages = totalPages;
             this.Items = items;
+            this.PageSize = pageSize;
             this.TotalItems = totalItems;
         }
 
         public virtual int CurrentPage { get; set; }
         public virtual int TotalPages { get; set; }
         public virtual int TotalItems { get; set; }
+        public virtual int PageSize { get; set; }
         public virtual List<TEntity> Items { get; set; }
     }
 }

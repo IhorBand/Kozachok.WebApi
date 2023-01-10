@@ -14,15 +14,18 @@ namespace Kozachok.Shared.DTO.Models.DbEntities
 
         public Room(
             string name,
-            RoomType roomTypeId)
+            RoomType roomTypeId,
+            Guid ownerUserId)
         {
             Name = name;
             RoomTypeId = roomTypeId;
+            OwnerUserId = ownerUserId;
             CreatedDateUTC = DateTime.UtcNow;
         }
 
         public virtual string Name { get; set; }
         public virtual RoomType RoomTypeId { get; set; }
+        public virtual Guid OwnerUserId { get; set; }
         public virtual DateTime CreatedDateUTC { get; private set; }
     }
 }
