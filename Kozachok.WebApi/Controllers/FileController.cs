@@ -30,14 +30,7 @@ namespace Kozachok.WebApi.Controllers
             IFormFile file)
         {
             var result = await bus.RequestAsync(new UpdateUserThumbnailImageCommand() { File = file });
-            
-            if (result != null)
-            {
-                var model = mapper.Map<Models.File.File>(result);
-                return Response(model);
-            }
-
-            return Response();
+            return Response<Models.File.File>(result);
         }
     }
 }

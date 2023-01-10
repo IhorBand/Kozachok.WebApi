@@ -41,7 +41,9 @@ namespace Kozachok.Domain.Handlers.Events
                 {EmailParameters.ConfirmationEmailUrl, confirmationUrl}
             };
 
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             emailService.SendEmailTemplateAsync(notification.Email, EmailTemplates.EmailConfirmation, parameters);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
             return Task.CompletedTask;
         }
@@ -63,7 +65,9 @@ namespace Kozachok.Domain.Handlers.Events
                 {EmailParameters.ConfirmationEmailUrl, confirmationUrl}
             };
 
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             emailService.SendEmailTemplateAsync(notification.Email, EmailTemplates.EmailConfirmation, parameters);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
             return Task.CompletedTask;
         }
@@ -84,7 +88,9 @@ namespace Kozachok.Domain.Handlers.Events
                 {EmailParameters.ConfirmationEmailUrl, forgetPasswordUrl}
             };
 
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             emailService.SendEmailTemplateAsync(notification.Email, EmailTemplates.PasswordReset, parameters);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
             return Task.CompletedTask;
         }
@@ -101,7 +107,9 @@ namespace Kozachok.Domain.Handlers.Events
                 {EmailParameters.ConfirmationEmailUrl, changeEmailConfirmationUrl}
             };
 
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             emailService.SendEmailTemplateAsync(notification.Email, EmailTemplates.EmailReset, parameters);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
             return Task.CompletedTask;
         }

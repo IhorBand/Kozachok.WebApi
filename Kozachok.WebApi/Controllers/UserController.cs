@@ -93,8 +93,7 @@ namespace Kozachok.WebApi.Controllers
         public async Task<IActionResult> GetUser([FromRoute(Name = "userId")] Guid userId)
         {
             var result = await bus.RequestAsync<UserDetails>(new GetUserDetailQuery() { UserId = userId });
-            var model = mapper.Map<Models.User.UserDetails>(result);
-            return Response(model);
+            return Response<Models.User.UserDetails>(result);
         }
     }
 }
