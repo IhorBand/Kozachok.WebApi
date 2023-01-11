@@ -135,6 +135,7 @@ namespace Kozachok.WebApi.Services.Implementation
                 TokenType = "Bearer",
                 Token = tokenResult,
                 UserId = user.Id.ToString(),
+                UserEmail = user.Email,
                 UserName = user.Name,
                 RefreshTokenExpiresInSeconds = (int)refreshTokenExpiresIn.TotalSeconds,
                 RefreshTokenExpiresInUTC = refreshTokenExpiredIn.ToString("yyyy-MM-dd HH:mm:ss"),
