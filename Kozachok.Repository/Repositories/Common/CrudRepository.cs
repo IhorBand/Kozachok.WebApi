@@ -65,6 +65,7 @@ namespace Kozachok.Repository.Repositories.Common
                 page,
                 (int)Math.Ceiling(totalItems / (decimal)pageSize),
                 totalItems,
+                pageSize,
                 query.Skip((page - 1) * pageSize).Take(pageSize).ToList()
             );
         }
