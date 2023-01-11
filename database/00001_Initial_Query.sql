@@ -24,3 +24,6 @@ CREATE TABLE [dbo].[T_User](
 	)
 )
 GO
+
+ALTER TABLE [dbo].[T_User] ADD CONSTRAINT UQ_T_User_Email UNIQUE ([Email])
+GO

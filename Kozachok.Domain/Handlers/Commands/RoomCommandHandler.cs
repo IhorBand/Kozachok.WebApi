@@ -21,7 +21,8 @@ namespace Kozachok.Domain.Handlers.Commands
         IRequestHandler<CreateRoomCommand, Room>,
         IRequestHandler<UpdateRoomCommand>,
         IRequestHandler<DeleteRoomCommand>,
-        IRequestHandler<JoinRoomCommand>
+        IRequestHandler<JoinRoomCommand>,
+        IRequestHandler<LeaveRoomCommand>
     {
         private readonly IUserRepository userRepository;
         private readonly IRoomRepository roomRepository;
@@ -221,6 +222,14 @@ namespace Kozachok.Domain.Handlers.Commands
             if (room == null || (room != null && room.Id == Guid.Empty))
             {
                 await bus.InvokeDomainNotificationAsync("Room doesn't exist.");
+                return Unit.Value;
+            }
+
+            var isUserAlreadyJoinedRoom = await roomUserRepository.AnyAsync(e => e.RoomId == room.Id && e.UserId == currentUser.Id);
+
+            if (isUserAlreadyJoinedRoom)
+            {
+                await bus.InvokeDomainNotificationAsync("User already in this room.");
                 return Unit.Value;
             }
 

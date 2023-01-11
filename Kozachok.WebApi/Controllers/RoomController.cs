@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Kozachok.Domain.Commands.File;
 using Kozachok.Domain.Commands.Room;
 using Kozachok.Domain.Queries.Room;
 using Kozachok.Shared;
@@ -7,7 +6,6 @@ using Kozachok.Shared.Abstractions.Bus;
 using Kozachok.Shared.DTO.Common;
 using Kozachok.WebApi.Auth;
 using Kozachok.WebApi.Controllers.Common;
-using Kozachok.WebApi.Validation;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,7 +23,6 @@ namespace Kozachok.WebApi.Controllers
 
         [HttpPost]
         [BearerAuthorization]
-
         public async Task<IActionResult> CreateRoom([FromBody] CreateRoomCommand command)
         {
             var result = await bus.RequestAsync(command);
@@ -34,7 +31,6 @@ namespace Kozachok.WebApi.Controllers
 
         [HttpPut]
         [BearerAuthorization]
-
         public async Task<IActionResult> UpdateRoom([FromBody] UpdateRoomCommand command)
         {
             await bus.SendAsync(command);
@@ -43,7 +39,6 @@ namespace Kozachok.WebApi.Controllers
 
         [HttpPut("{roomId}/Join")]
         [BearerAuthorization]
-
         public async Task<IActionResult> JoinRoom([FromRoute] Guid roomId)
         {
             await bus.SendAsync(new JoinRoomCommand() { RoomId = roomId });
@@ -52,7 +47,6 @@ namespace Kozachok.WebApi.Controllers
 
         [HttpPut("{roomId}/Leave")]
         [BearerAuthorization]
-
         public async Task<IActionResult> LeaveRoom([FromRoute] Guid roomId)
         {
             await bus.SendAsync(new LeaveRoomCommand() { RoomId = roomId });
@@ -61,7 +55,6 @@ namespace Kozachok.WebApi.Controllers
 
         [HttpDelete]
         [BearerAuthorization]
-
         public async Task<IActionResult> DeleteRoom([FromBody] DeleteRoomCommand command)
         {
             await bus.SendAsync(command);
