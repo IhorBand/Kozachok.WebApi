@@ -53,11 +53,11 @@ namespace Kozachok.WebApi.Controllers
             return Response();
         }
 
-        [HttpDelete]
+        [HttpDelete("{roomId}")]
         [BearerAuthorization]
-        public async Task<IActionResult> DeleteRoom([FromBody] DeleteRoomCommand command)
+        public async Task<IActionResult> DeleteRoom([FromRoute(Name = "roomId")] Guid roomId)
         {
-            await bus.SendAsync(command);
+            await bus.SendAsync(new DeleteRoomCommand() { RoomId = roomId });
             return Response();
         }
 
