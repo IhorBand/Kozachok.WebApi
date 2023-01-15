@@ -3,6 +3,7 @@ using Kozachok.Domain.Commands.User;
 using Kozachok.Domain.Queries.User;
 using Kozachok.Shared.Abstractions.Bus;
 using Kozachok.Shared.DTO.Common;
+using Kozachok.Shared.DTO.Models.Result.Email;
 using Kozachok.Shared.DTO.Models.Result.User;
 using Kozachok.WebApi.Auth;
 using Kozachok.WebApi.Controllers.Common;
@@ -24,8 +25,8 @@ namespace Kozachok.WebApi.Controllers
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] CreateUserCommand command)
         {
-            await bus.SendAsync(command);
-            return Response();
+            var result = await bus.RequestAsync<EmailTimer>(command);
+            return Response(result);
         }   
 
         [HttpPut()]
@@ -47,8 +48,8 @@ namespace Kozachok.WebApi.Controllers
         [HttpPut("ResendConfirmationCode")]
         public async Task<IActionResult> ResendActivationCode([FromBody] ResendActivationCodeCommand command)
         {
-            await bus.SendAsync(command);
-            return Response();
+            var result = await bus.RequestAsync<EmailTimer>(command);
+            return Response(result);
         }
 
         [HttpPut("Activate")]
@@ -61,8 +62,8 @@ namespace Kozachok.WebApi.Controllers
         [HttpPut("SendForgetPasswordEmail")]
         public async Task<IActionResult> SendForgetPasswordEmail([FromBody] SendForgetPasswordEmailCommand command)
         {
-            await bus.SendAsync(command);
-            return Response();
+            var result = await bus.RequestAsync<EmailTimer>(command);
+            return Response(result);
         }
 
         [HttpPut("ForgetPassword")]
@@ -76,8 +77,8 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization()]
         public async Task<IActionResult> SendChangeEmailConfirmation([FromBody] SendChangeEmailConfirmationCommand command)
         {
-            await bus.SendAsync(command);
-            return Response();
+            var result = await bus.RequestAsync<EmailTimer>(command);
+            return Response(result);
         }
 
         [HttpPut("ActivateNewEmail")]
