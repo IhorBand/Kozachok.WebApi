@@ -21,6 +21,8 @@ CREATE TABLE [dbo].[T_User_Confirmation_Code](
 	[ConfirmationCode] [VARCHAR](150) NOT NULL,
 	[CodeType] [TINYINT] NOT NULL CONSTRAINT FK_T_User_Confirmation_Code_CodeType_To_L_Confirmation_Code_Type_Id FOREIGN KEY REFERENCES [dbo].[L_Confirmation_Code_Type](Id),
 	[AdditionalData] [VARCHAR](500) NULL,
+	[NumberOfAttempt] [TINYINT] NOT NULL CONSTRAINT DF_T_User_Confirmation_Code_NumberOfAttempt DEFAULT(1),
+	[NextAttemptDate] [DATETIME] NOT NULL CONSTRAINT DF_T_User_Confirmation_Code_NextAttemptDate DEFAULT GETUTCDATE(),
 	[CreatedDateUTC] [DATETIME] CONSTRAINT DF_T_User_Confirmation_Code_CreatedDateUTC DEFAULT GETUTCDATE() NOT NULL,
 	CONSTRAINT [T_User_Confirmation_Code_Id] PRIMARY KEY CLUSTERED
 	(
