@@ -222,7 +222,7 @@ namespace Kozachok.Domain.Handlers.Commands
             byte attemptNum = 1;
             if(previousConfirmationCode != null && previousConfirmationCode.Id != Guid.Empty)
             {
-                if (previousConfirmationCode.NextAttemptDate <= DateTime.UtcNow)
+                if (previousConfirmationCode.NextAttemptDate > DateTime.UtcNow)
                 {
                     await bus.InvokeDomainNotificationAsync($"Please, wait {(DateTime.UtcNow - previousConfirmationCode.NextAttemptDate)}.");
                     return null;
@@ -335,7 +335,7 @@ namespace Kozachok.Domain.Handlers.Commands
             byte attemptNum = 1;
             if (previousCode != null && previousCode.Id != Guid.Empty)
             {
-                if (previousCode.NextAttemptDate <= DateTime.UtcNow)
+                if (previousCode.NextAttemptDate > DateTime.UtcNow)
                 {
                     await bus.InvokeDomainNotificationAsync($"Please, wait {(DateTime.UtcNow - previousCode.NextAttemptDate)}.");
                     return null;
@@ -454,7 +454,7 @@ namespace Kozachok.Domain.Handlers.Commands
             byte attemptNum = 1;
             if (previousCode != null && previousCode.Id != Guid.Empty)
             {
-                if (previousCode.NextAttemptDate <= DateTime.UtcNow)
+                if (previousCode.NextAttemptDate > DateTime.UtcNow)
                 {
                     await bus.InvokeDomainNotificationAsync($"Please, wait {(DateTime.UtcNow - previousCode.NextAttemptDate)}.");
                     return null;
