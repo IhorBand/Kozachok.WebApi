@@ -25,6 +25,7 @@ using MediatR;
 using Kozachok.WebApi.Setup;
 using System.Reflection;
 using Kozachok.Domain.Emails;
+using AspNetCoreRateLimit;
 
 namespace Kozachok.WebApi
 {
@@ -43,6 +44,30 @@ namespace Kozachok.WebApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDistributedMemoryCache();
+
+            // needed to store rate limit counters and ip rules
+            services.AddMemoryCache();
+            services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+            services.AddInMemoryRateLimiting();
+
+            //load general configuration from appsettings.json
+            services.Configure<IpRateLimitOptions>(options =>
+            {
+                options.EnableEndpointRateLimiting = true;
+                options.StackBlockedRequests = false;
+                options.HttpStatusCode = 429;
+                options.RealIpHeader = "X-Real-IP";
+                options.ClientIdHeader = "X-ClientId";
+                options.GeneralRules = new List<RateLimitRule>
+                {
+                    new RateLimitRule
+                    {
+                        Endpoint = "*",
+                        Period = "60s",
+                        Limit = 60
+                    }
+                };
+            });
 
             services.AddMediatR(options => options.AsScoped(), AppDomain.CurrentDomain.GetAssemblies());
 
@@ -181,6 +206,8 @@ namespace Kozachok.WebApi
             /*
             app.UseRequestResponseLogging();
             */
+
+            app.UseIpRateLimiting();
 
             if (env.IsDevelopment())
             {
