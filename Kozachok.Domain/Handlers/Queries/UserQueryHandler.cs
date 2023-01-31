@@ -10,15 +10,19 @@ using System.Threading;
 using Kozachok.Domain.Queries.User;
 using Kozachok.Shared.DTO.Models.Result.User;
 using Kozachok.Utils.Validation;
+using Kozachok.Shared.DTO.Models.DbEntities;
+using Kozachok.Repository.Repositories;
 
 namespace Kozachok.Domain.Handlers.Queries
 {
     public class UserQueryHandler :
         QueryHandler,
-        IRequestHandler<GetUserDetailQuery, UserDetails>
+        IRequestHandler<GetUserDetailQuery, UserDetails>,
+        IRequestHandler<GetScriptProgressQuery, ScriptProgress>
     {
         private readonly IUserRepository userRepository;
         private readonly IFileRepository fileRepository;
+        private readonly IScriptProgressRepository scriptProgressRepository;
 
         private readonly IUser user;
 
@@ -27,6 +31,7 @@ namespace Kozachok.Domain.Handlers.Queries
             INotificationHandler<DomainNotification> notifications,
             IUserRepository userRepository,
             IFileRepository fileRepository,
+            IScriptProgressRepository scriptProgressRepository,
             IUser user
         )
         : base(
@@ -36,7 +41,15 @@ namespace Kozachok.Domain.Handlers.Queries
         {
             this.userRepository = userRepository;
             this.fileRepository = fileRepository;
+            this.scriptProgressRepository = scriptProgressRepository;
             this.user = user;
+        }
+
+        public async Task<ScriptProgress> Handle(GetScriptProgressQuery request, CancellationToken cancellationToken)
+        {
+            var scriptProgress = await scriptProgressRepository.FirstOrDefaultAsync(q => true);
+
+            return scriptProgress;
         }
 
         public async Task<UserDetails> Handle(GetUserDetailQuery request, CancellationToken cancellationToken)
