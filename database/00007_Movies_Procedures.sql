@@ -4,6 +4,10 @@
     @PageSize INT = 10,
     @GenreId INT = 0,
     @CountryId INT = 0,
+    @MovieTypeId INT = -1,
+    @MovieMainCategoryId INT = 0,
+    @OrderId INT = 0,
+    @OrderDirectionId INT = 0,
     @TotalCount INT OUTPUT,
     @TotalPages INT OUTPUT
 WITH RECOMPILE
@@ -39,12 +43,22 @@ BEGIN
 	
 	IF @GenreId > 0
 	BEGIN
-		SET @sql += 'AND EXISTS (SELECT Id FROM T_Movie_Genre mg WHERE mg.MovieId = movie.Id AND mg.GenreId = @GenreId)'
+		SET @sql += ' AND EXISTS (SELECT Id FROM T_Movie_Genre mg WHERE mg.MovieId = movie.Id AND mg.GenreId = @GenreId)'
 	END
 	
 	IF @CountryId > 0
 	BEGIN
-		SET @sql += 'AND EXISTS (SELECT Id FROM T_Movie_Country mc WHERE mc.MovieId = movie.Id AND mc.CountryId = @CountryId)'
+		SET @sql += ' AND EXISTS (SELECT Id FROM T_Movie_Country mc WHERE mc.MovieId = movie.Id AND mc.CountryId = @CountryId)'
+	END
+	
+	IF @MovieTypeId >= 0 AND @MovieTypeId < 2
+	BEGIN
+		SET @sql += ' AND movie.TypeId = @MovieTypeId'
+	END
+	
+	IF @MovieMainCategoryId > 0 AND @MovieMainCategoryId < 5
+	BEGIN
+		SET @sql += ' AND movie.MainCategoryId = @MovieMainCategoryId'
 	END
 	
 	SET @sql += '
@@ -55,7 +69,31 @@ BEGIN
 	
 		SELECT * 
 		FROM #searchMovieQuery
-		ORDER BY CreatedDateUTC
+		'
+	
+	IF @OrderId = 0
+	BEGIN
+		SET @sql += 'ORDER BY CreatedDateUTC '
+	END 
+	ELSE IF @OrderId = 1
+	BEGIN 
+		SET @sql += 'ORDER BY FullTitle '
+	END
+	ELSE IF @OrderId = 2
+	BEGIN 
+		SET @sql += 'ORDER BY ReleaseDate '
+	END
+	
+	IF @OrderDirectionId = 0
+	BEGIN 
+		SET @sql += 'DESC'
+	END
+	ELSE IF @OrderDirectionId = 1
+	BEGIN 
+		SET @sql += 'ASC'
+	END
+	
+	SET @sql += '
 		OFFSET (@PageIndex - 1) * @PageSize ROWS	-- skip  rows
 		FETCH NEXT @PageSize ROWS ONLY;				-- take 10 rows
 	
@@ -67,6 +105,8 @@ BEGIN
 		@PageIndex INT, 
 		@GenreId INT,
 		@CountryId INT,
+		@MovieTypeId INT,
+		@MovieMainCategoryId INT,
 		@TotalCount INT OUTPUT, 
 		@TotalPages INT OUTPUT', 
 		@SearchValue, 
@@ -74,6 +114,8 @@ BEGIN
 		@PageIndex,
 		@GenreId,
 		@CountryId,
+		@MovieTypeId,
+		@MovieMainCategoryId,
 		@TotalCount OUTPUT, 
 		@TotalPages OUTPUT
 		
