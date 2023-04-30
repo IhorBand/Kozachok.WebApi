@@ -38,8 +38,15 @@ BEGIN
 			[movie].*
 		INTO #searchMovieQuery
 		FROM [T_Movie] movie
-		WHERE (LOWER(FullTitle) LIKE ''%'' + @SearchValue + ''%'' 
-			OR LOWER(OriginalFullTitle) LIKE ''%'' + @SearchValue + ''%'')'
+		WHERE 1=1 --TODO: Added this as hotfix for filters 
+	'
+	
+	IF @SearchValue IS NOT NULL AND TRIM(@SearchValue) <> ''
+	BEGIN
+		SET @sql += '
+			AND ((LOWER(FullTitle) LIKE ''%'' + @SearchValue + ''%'' 
+			OR LOWER(OriginalFullTitle) LIKE ''%'' + @SearchValue + ''%''))'
+	END	
 	
 	IF @GenreId > 0
 	BEGIN

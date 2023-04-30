@@ -4,6 +4,7 @@ namespace Kozachok.WebApi.Models.Movie
 {
     public class Movie
     {
+        public Guid Id { get; set; }
         public string? VideoId { get; set; }
         public string? ShortTitle { get; set; }
         public string? FullTitle { get; set; }

@@ -26,6 +26,8 @@ using Kozachok.WebApi.Setup;
 using System.Reflection;
 using Kozachok.Domain.Emails;
 using AspNetCoreRateLimit;
+using Kozachok.Repository.HttpRepository;
+using Kozachok.Shared.Abstractions.HttpRepositories;
 
 namespace Kozachok.WebApi
 {
@@ -267,6 +269,9 @@ namespace Kozachok.WebApi
             var fileServerConfiguration = this.Configuration.GetSection("FileServer").Get<FileServerConfiguration>();
             services.AddSingleton(fileServerConfiguration);
 
+            var movieCatalogEndpoints = this.Configuration.GetSection("MovieCatalogEndpoints").Get<MovieCatalogEndpointsConfiguration>();
+            services.AddSingleton(movieCatalogEndpoints);
+
             // AutoMapper Configuration
             var mapperConfig = new MapperConfiguration(mc =>
             {
@@ -290,6 +295,7 @@ namespace Kozachok.WebApi
             services.AddScoped<IMediatorHandler, InMemoryBus>();
             services.AddScoped<IUser, UserControl>();
             services.AddScoped<EmailService>();
+            services.AddScoped<IMovieCatalogRepository, MovieCatalogRepository>();
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
