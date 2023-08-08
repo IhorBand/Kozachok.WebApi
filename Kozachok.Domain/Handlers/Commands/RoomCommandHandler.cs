@@ -12,7 +12,6 @@ using Kozachok.Shared.DTO.Models.DbEntities;
 using Kozachok.Utils.Validation;
 using System;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace Kozachok.Domain.Handlers.Commands
 {

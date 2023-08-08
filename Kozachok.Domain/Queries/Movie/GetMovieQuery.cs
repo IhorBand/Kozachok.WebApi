@@ -1,8 +1,6 @@
-﻿using Kozachok.Shared;
-using Kozachok.Shared.Abstractions.Commands;
+﻿using Kozachok.Shared.Abstractions.Commands;
 using Kozachok.Shared.DTO.Common;
 using Kozachok.Shared.DTO.Enums;
-using System.Xml.Linq;
 
 namespace Kozachok.Domain.Queries.Movie
 {
