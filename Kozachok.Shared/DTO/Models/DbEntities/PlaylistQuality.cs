@@ -9,7 +9,7 @@ namespace Kozachok.Shared.DTO.Models.DbEntities
         // -> Empty contructor for EF
         public PlaylistQuality()
         {
-
+            CreatedDateUTC = DateTime.UtcNow;
         }
 
         public virtual Guid PlaylistMovieId { get; set; }

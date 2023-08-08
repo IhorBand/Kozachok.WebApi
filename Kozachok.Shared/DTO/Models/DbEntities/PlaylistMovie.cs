@@ -8,7 +8,7 @@ namespace Kozachok.Shared.DTO.Models.DbEntities
         // -> Empty contructor for EF
         public PlaylistMovie()
         {
-
+            CreatedDateUTC = DateTime.UtcNow;
         }
 
         public virtual Guid MovieId { get; set; }

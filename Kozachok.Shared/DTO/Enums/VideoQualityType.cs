@@ -1,6 +1,6 @@
 ﻿namespace Kozachok.Shared.DTO.Enums
 {
-    public enum VideoQualityType : byte
+    public enum VideoQualityType : int
     {
         Low_360 = 0,
         Medium_480 = 1,
