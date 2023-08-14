@@ -108,12 +108,6 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            // "roomId": "2c4527ff-a047-4219-6895-08daf2cce640",
-            // "movieId": "ee2fac4a-11ec-4733-92b8-2d1b92342e78",
-            // "translatorId": "56",
-            // "season": 1,
-            // "episode": 11
-
             var translator = await translatorRepository.FirstOrDefaultAsync(t => t.TranslatorId == request.TranslatorId);
 
             var translatorName = string.Empty;

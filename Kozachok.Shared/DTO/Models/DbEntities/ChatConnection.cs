@@ -3,28 +3,28 @@ using System;
 
 namespace Kozachok.Shared.DTO.Models.DbEntities
 {
-    public class RoomUser : Entity
+    public class ChatConnection : Entity
     {
         // -> Empty contructor for EF
-        public RoomUser()
+        public ChatConnection()
         {
 
         }
 
-        public RoomUser(
+        public ChatConnection(
             Guid userId,
             Guid roomId,
-            bool isOwner)
+            string connectionId)
         {
             UserId = userId;
             RoomId = roomId;
-            IsOwner = isOwner;
+            ConnectionId = connectionId;
             CreatedDateUTC = DateTime.UtcNow;
         }
 
         public virtual Guid RoomId { get; set; }
         public virtual Guid UserId { get; set; }
-        public virtual bool IsOwner { get; set; }
+        public virtual string ConnectionId { get; set; }
         public virtual DateTime CreatedDateUTC { get; private set; }
     }
 }
