@@ -3,6 +3,12 @@ using Microsoft.AspNetCore.SignalR;
 using Kozachok.WebApi.Hubs.Base;
 using SignalRSwaggerGen.Attributes;
 using Kozachok.WebApi.Models.Chat;
+using Kozachok.Shared.Abstractions.Bus;
+using Kozachok.Domain.Commands.ChatConnection;
+using Kozachok.Shared.DTO.Common;
+using MediatR;
+using Kozachok.Domain.Handlers.Notifications;
+using Kozachok.WebApi.Models.Common;
 
 namespace Kozachok.WebApi.Hubs
 {
@@ -11,10 +17,17 @@ namespace Kozachok.WebApi.Hubs
     public class ChatHub : UserHubBase
     {
         private readonly ILogger<ChatHub> logger;
+        private readonly IMediatorHandler bus;
+        private readonly DomainNotificationHandler notifications;
+
         public ChatHub(
-            ILogger<ChatHub> logger)
+            ILogger<ChatHub> logger,
+            IMediatorHandler bus,
+            INotificationHandler<DomainNotification> notifications)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.bus = bus;
+            this.notifications = (DomainNotificationHandler)notifications;
         }
 
         [SignalRHidden]
@@ -27,6 +40,24 @@ namespace Kozachok.WebApi.Hubs
         public override Task OnDisconnectedAsync(Exception? exception)
         {
             return base.OnDisconnectedAsync(exception);
+        }
+
+        public async Task JoinRoomChat(Guid roomId)
+        {
+            await bus.SendAsync(new JoinRoomCommand()
+            {
+                UserId = UserId,
+                RoomId = roomId,
+                ConnectionId = Context.ConnectionId
+            });
+
+            if (!IsValidOperation())
+            {
+                await Clients.Caller.SendAsync("ErrorHandler", "something went wrong while trying to join to room.");
+                return;
+            }
+
+            await Groups.AddToGroupAsync(Context.ConnectionId, roomId.ToString());
         }
 
         public async Task SendMessageAsync(string message)
@@ -45,5 +76,7 @@ namespace Kozachok.WebApi.Hubs
         {
             await this.Clients.All.SendAsync("ReceiveChangeAvatarAsync", new { AvatarId = avatarId, UserId = this.UserId, UserName = this.UserName }).ConfigureAwait(false);
         }
+
+        protected bool IsValidOperation() => !notifications.HasNotifications();
     }
 }

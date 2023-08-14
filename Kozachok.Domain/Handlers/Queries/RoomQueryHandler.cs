@@ -209,7 +209,7 @@ namespace Kozachok.Domain.Handlers.Queries
             }
 
             IQueryable<Room> query = roomUserRepository.Query()
-                .Where(roomUser => roomUser.UserId == currentUser.Id)
+                .Where(roomUser => roomUser.UserId == currentUser.Id && roomUser.IsOwner == false)
                 .Join(roomRepository.Query(),
                     roomUser => roomUser.RoomId,
                     room => room.Id,
