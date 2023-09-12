@@ -11,7 +11,6 @@ using Kozachok.Domain.Queries.User;
 using Kozachok.Shared.DTO.Models.Result.User;
 using Kozachok.Utils.Validation;
 using Kozachok.Shared.DTO.Models.DbEntities;
-using Kozachok.Repository.Repositories;
 
 namespace Kozachok.Domain.Handlers.Queries
 {
@@ -56,12 +55,12 @@ namespace Kozachok.Domain.Handlers.Queries
         {
             if(IsUserAuthorized(user) == false)
             {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return null;
             }
 
             request
-                .IsInvalidGuid(e => e.UserId, async () => await bus.InvokeDomainNotificationAsync("UserId is invalid."));
+                .IsInvalidGuid(e => e.UserId, async () => await Bus.InvokeDomainNotificationAsync("UserId is invalid."));
 
             if (!IsValidOperation())
             {
@@ -70,9 +69,9 @@ namespace Kozachok.Domain.Handlers.Queries
 
             var requestedUser = await userRepository.GetAsync(request.UserId);
 
-            if(requestedUser == null || (requestedUser != null && requestedUser.Id == Guid.Empty))
+            if (requestedUser == null || (requestedUser.Id == Guid.Empty))
             {
-                await bus.InvokeDomainNotificationAsync("User not found.");
+                await Bus.InvokeDomainNotificationAsync("User not found.");
                 return null;
             }
 
@@ -81,7 +80,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 User = requestedUser
             };
 
-            if(requestedUser.ThumbnailImageFileId != null && requestedUser.ThumbnailImageFileId.Value != Guid.Empty)
+            if (requestedUser.ThumbnailImageFileId != null && requestedUser.ThumbnailImageFileId.Value != Guid.Empty)
             {
                 var file = await fileRepository.GetAsync(requestedUser.ThumbnailImageFileId.Value);
                 if(file != null && file.Id != Guid.Empty)

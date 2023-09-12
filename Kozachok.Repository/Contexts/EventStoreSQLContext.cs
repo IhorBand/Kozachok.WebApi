@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kozachok.Repository.Contexts
 {
-    public class EventStoreSQLContext : DbContext
+    public class EventStoreSqlContext : DbContext
     {
-        public EventStoreSQLContext(DbContextOptions<EventStoreSQLContext> options) : base(options)
+        public EventStoreSqlContext(DbContextOptions<EventStoreSqlContext> options) : base(options)
         {
         }
 

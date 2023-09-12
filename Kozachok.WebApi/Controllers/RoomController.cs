@@ -25,7 +25,7 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization]
         public async Task<IActionResult> CreateRoom([FromBody] CreateRoomCommand command)
         {
-            var result = await bus.RequestAsync(command);
+            var result = await Bus.RequestAsync(command);
             return Response(result);
         }
 
@@ -33,7 +33,7 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization]
         public async Task<IActionResult> UpdateRoom([FromBody] UpdateRoomCommand command)
         {
-            await bus.SendAsync(command);
+            await Bus.SendAsync(command);
             return Response();
         }
 
@@ -41,7 +41,7 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization]
         public async Task<IActionResult> JoinRoom([FromRoute] Guid roomId)
         {
-            await bus.SendAsync(new JoinRoomCommand() { RoomId = roomId });
+            await Bus.SendAsync(new JoinRoomCommand() { RoomId = roomId });
             return Response();
         }
 
@@ -49,7 +49,7 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization]
         public async Task<IActionResult> LeaveRoom([FromRoute] Guid roomId)
         {
-            await bus.SendAsync(new LeaveRoomCommand() { RoomId = roomId });
+            await Bus.SendAsync(new LeaveRoomCommand() { RoomId = roomId });
             return Response();
         }
 
@@ -57,7 +57,7 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization]
         public async Task<IActionResult> DeleteRoom([FromRoute(Name = "roomId")] Guid roomId)
         {
-            await bus.SendAsync(new DeleteRoomCommand() { RoomId = roomId });
+            await Bus.SendAsync(new DeleteRoomCommand() { RoomId = roomId });
             return Response();
         }
 
@@ -65,7 +65,15 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization]
         public async Task<IActionResult> GetRoom([FromRoute(Name = "roomId")] Guid roomId)
         {
-            var result = await bus.RequestAsync(new GetRoomQuery() { RoomId = roomId });
+            var result = await Bus.RequestAsync(new GetRoomQuery() { RoomId = roomId });
+            return Response(result);
+        }
+
+        [HttpGet("{roomId}/Dependencies")]
+        [BearerAuthorization]
+        public async Task<IActionResult> GetRoomDependencies([FromRoute(Name = "roomId")] Guid roomId)
+        {
+            var result = await Bus.RequestAsync(new GetRoomFullInformationDtoQuery() { RoomId = roomId });
             return Response(result);
         }
 
@@ -73,7 +81,7 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization]
         public async Task<IActionResult> GetPublicRooms([FromQuery(Name = "page")] int? page = 1, [FromQuery(Name = "itemsPerPage")] int? itemsPerPage = GlobalConstants.DefaultPageSize, [FromQuery(Name = "name")] string? name = null)
         {
-            var result = await bus.RequestAsync(new GetPublicRoomsQuery() { ItemsPerPage = itemsPerPage, Page = page, Name = name });
+            var result = await Bus.RequestAsync(new GetPublicRoomsQuery() { ItemsPerPage = itemsPerPage, Page = page, Name = name });
             return Response(result);
         }
 
@@ -81,7 +89,7 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization]
         public async Task<IActionResult> GetCreatedRooms([FromQuery(Name = "page")] int? page = 1, [FromQuery(Name = "itemsPerPage")] int? itemsPerPage = GlobalConstants.DefaultPageSize, [FromQuery(Name = "name")] string? name = null)
         {
-            var result = await bus.RequestAsync(new GetCreatedRoomsQuery() { ItemsPerPage = itemsPerPage, Page = page, Name = name });
+            var result = await Bus.RequestAsync(new GetCreatedRoomsQuery() { ItemsPerPage = itemsPerPage, Page = page, Name = name });
             return Response(result);
         }
 
@@ -89,7 +97,7 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization]
         public async Task<IActionResult> GetJoinedRooms([FromQuery(Name = "page")] int? page = 1, [FromQuery(Name = "itemsPerPage")] int? itemsPerPage = GlobalConstants.DefaultPageSize, [FromQuery(Name = "name")] string? name = null)
         {
-            var result = await bus.RequestAsync(new GetJoinedRoomsQuery() { ItemsPerPage = itemsPerPage, Page = page, Name = name });
+            var result = await Bus.RequestAsync(new GetJoinedRoomsQuery() { ItemsPerPage = itemsPerPage, Page = page, Name = name });
             return Response(result);
         }
     }

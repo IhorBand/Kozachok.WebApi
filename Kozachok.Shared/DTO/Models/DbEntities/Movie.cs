@@ -6,10 +6,9 @@ namespace Kozachok.Shared.DTO.Models.DbEntities
 {
     public class Movie : Entity
     {
-        // -> Empty contructor for EF
         public Movie()
         {
-            
+            CreatedDateUtc = DateTime.UtcNow;
         }
 
         public virtual string VideoId { get; set; }
@@ -28,6 +27,6 @@ namespace Kozachok.Shared.DTO.Models.DbEntities
         public virtual MovieType TypeId { get; set; }
         public virtual MovieMainCategory MainCategoryId { get; set; }
         public virtual DateTime ReleaseDate { get; set; }
-        public virtual DateTime CreatedDateUTC { get; private set; }
+        public virtual DateTime CreatedDateUtc { get; private set; }
     }
 }

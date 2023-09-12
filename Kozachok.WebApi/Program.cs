@@ -1,5 +1,4 @@
 using System.Reflection;
-using Microsoft.AspNetCore.Hosting;
 using Serilog;
 
 namespace Kozachok.WebApi

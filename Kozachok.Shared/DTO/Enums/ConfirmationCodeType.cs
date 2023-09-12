@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Kozachok.Shared.DTO.Enums
+﻿namespace Kozachok.Shared.DTO.Enums
 {
     public enum ConfirmationCodeType : byte
     {

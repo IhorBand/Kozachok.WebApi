@@ -28,7 +28,7 @@ namespace Kozachok.WebApi.Controllers
             [FromQuery(Name = "page")] int? page = 1,
             [FromQuery(Name = "itemsPerPage")] int? itemsPerPage = GlobalConstants.DefaultPageSize)
         {
-            var result = await bus.RequestAsync(new GetPlaylistQuery()
+            var result = await Bus.RequestAsync(new GetPlaylistQuery()
             {
                 Page = page,
                 ItemsPerPage = itemsPerPage,
@@ -41,7 +41,7 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization]
         public async Task<IActionResult> AddMovieToPlaylist([FromBody] AddMovieToPlaylistCommand command)
         {
-            await bus.SendAsync(command);
+            await Bus.SendAsync(command);
             return Response();
         }
 
@@ -49,7 +49,7 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization]
         public async Task<IActionResult> DeleteMovieFromPlaylist([FromBody] DeleteMovieFromPlaylistCommand command)
         {
-            await bus.SendAsync(command);
+            await Bus.SendAsync(command);
             return Response();
         }
     }

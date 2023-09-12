@@ -13,14 +13,14 @@ using Kozachok.Utils.Validation;
 using Kozachok.Shared;
 using System.Linq;
 using System.Collections.Generic;
-using Org.BouncyCastle.Utilities;
-using Castle.DynamicProxy.Generators;
+using AutoMapper;
+using Kozachok.Shared.DTO.Models.DomainEntities;
 
 namespace Kozachok.Domain.Handlers.Queries
 {
     public class PlaylistQueryHandler :
         QueryHandler,
-        IRequestHandler<GetPlaylistQuery, PagedResult<PlaylistMovies>>
+        IRequestHandler<GetPlaylistQuery, PagedResult<PlaylistMovieDto>>
     {
         private readonly IUserRepository userRepository;
         private readonly IRoomRepository roomRepository;
@@ -28,6 +28,7 @@ namespace Kozachok.Domain.Handlers.Queries
         private readonly IPlaylistMovieRepository playlistMovieRepository;
         private readonly IPlaylistQualityRepository playlistQualityRepository;
         private readonly IUser user;
+        private readonly IMapper mapper;
 
         public PlaylistQueryHandler(
             IMediatorHandler bus,
@@ -37,8 +38,8 @@ namespace Kozachok.Domain.Handlers.Queries
             IRoomUserRepository roomUserRepository,
             IPlaylistMovieRepository playlistMovieRepository,
             IPlaylistQualityRepository playlistQualityRepository,
-            IUser user
-        )
+            IUser user,
+            IMapper mapper)
         : base(
                 bus,
                 notifications
@@ -50,24 +51,25 @@ namespace Kozachok.Domain.Handlers.Queries
             this.playlistMovieRepository = playlistMovieRepository;
             this.playlistQualityRepository = playlistQualityRepository;
             this.user = user;
+            this.mapper = mapper;
         }
 
-        public async Task<PagedResult<PlaylistMovies>> Handle(GetPlaylistQuery request, CancellationToken cancellationToken)
+        public async Task<PagedResult<PlaylistMovieDto>> Handle(GetPlaylistQuery request, CancellationToken cancellationToken)
         {
             if (IsUserAuthorized(user) == false)
             {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return null;
             }
 
             request
-                .IsInvalidGuid(e => e.RoomId, async () => await bus.InvokeDomainNotificationAsync("RoomId is invalid."));
+                .IsInvalidGuid(e => e.RoomId, async () => await Bus.InvokeDomainNotificationAsync("RoomId is invalid."));
 
             var currentUser = await userRepository.GetAsync(user.Id.Value);
 
-            if (currentUser == null || (currentUser != null && currentUser.Id == Guid.Empty))
+            if (currentUser == null || currentUser.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return null;
             }
 
@@ -78,18 +80,18 @@ namespace Kozachok.Domain.Handlers.Queries
 
             var room = await roomRepository.GetAsync(request.RoomId);
 
-            if (room == null || (room != null && room.Id == Guid.Empty))
+            if (room == null || room.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("Room doesn't exist.");
+                await Bus.InvokeDomainNotificationAsync("Room doesn't exist.");
                 return null;
             }
 
             if (room.RoomTypeId != Shared.DTO.Enums.RoomType.Public)
             {
                 var roomUser = await roomUserRepository.FirstOrDefaultAsync(ru => ru.RoomId == request.RoomId && ru.UserId == user.Id);
-                if (roomUser == null || (roomUser != null && roomUser.Id == Guid.Empty))
+                if (roomUser == null || roomUser.Id == Guid.Empty)
                 {
-                    await bus.InvokeDomainNotificationAsync("User doesn't have permissions to use this room.");
+                    await Bus.InvokeDomainNotificationAsync("User doesn't have permissions to use this room.");
                     return null;
                 }
             }
@@ -124,8 +126,11 @@ namespace Kozachok.Domain.Handlers.Queries
             }
 
             resultItems = resultItems.OrderBy(i => i.MovieDescription.OrderNumber).ToList();
+            
+            var result = new PagedResult<PlaylistMovies>(currentPage, resultMovies.TotalPages, resultMovies.TotalItems,
+                resultMovies.PageSize, resultItems);
 
-            return new PagedResult<PlaylistMovies>(currentPage, resultMovies.TotalPages, resultMovies.TotalItems, resultMovies.PageSize, resultItems);
+            return mapper.Map<PagedResult<PlaylistMovieDto>>(result);
         }
     }
 }

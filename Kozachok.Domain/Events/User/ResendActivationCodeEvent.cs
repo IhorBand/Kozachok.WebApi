@@ -1,8 +1,5 @@
 ﻿using Kozachok.Shared.Abstractions.Events;
-using Kozachok.Shared.DTO.Models;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Kozachok.Domain.Events.User
 {

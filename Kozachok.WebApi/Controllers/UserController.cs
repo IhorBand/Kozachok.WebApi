@@ -25,7 +25,7 @@ namespace Kozachok.WebApi.Controllers
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] CreateUserCommand command)
         {
-            var result = await bus.RequestAsync<EmailTimer>(command);
+            var result = await Bus.RequestAsync<EmailTimer>(command);
             return Response(result);
         }   
 
@@ -33,7 +33,7 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization()]
         public async Task<IActionResult> Put([FromBody] UpdateUserCommand command)
         {
-            await bus.SendAsync(command);
+            await Bus.SendAsync(command);
             return Response();
         }
 
@@ -41,35 +41,35 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization()]
         public async Task<IActionResult> ChangePassword([FromBody] ChangeUserPasswordCommand command)
         {
-            await bus.SendAsync(command);
+            await Bus.SendAsync(command);
             return Response();
         }
 
         [HttpPut("ResendConfirmationCode")]
         public async Task<IActionResult> ResendActivationCode([FromBody] ResendActivationCodeCommand command)
         {
-            var result = await bus.RequestAsync<EmailTimer>(command);
+            var result = await Bus.RequestAsync<EmailTimer>(command);
             return Response(result);
         }
 
         [HttpPut("Activate")]
         public async Task<IActionResult> Activate([FromBody] ActivateUserCommand command)
         {
-            await bus.SendAsync(command);
+            await Bus.SendAsync(command);
             return Response();
         }
 
         [HttpPut("SendForgetPasswordEmail")]
         public async Task<IActionResult> SendForgetPasswordEmail([FromBody] SendForgetPasswordEmailCommand command)
         {
-            var result = await bus.RequestAsync<EmailTimer>(command);
+            var result = await Bus.RequestAsync<EmailTimer>(command);
             return Response(result);
         }
 
         [HttpPut("ForgetPassword")]
         public async Task<IActionResult> ForgetPassword([FromBody] ForgetPasswordCommand command)
         {
-            await bus.SendAsync(command);
+            await Bus.SendAsync(command);
             return Response();
         }
 
@@ -77,7 +77,7 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization()]
         public async Task<IActionResult> SendChangeEmailConfirmation([FromBody] SendChangeEmailConfirmationCommand command)
         {
-            var result = await bus.RequestAsync<EmailTimer>(command);
+            var result = await Bus.RequestAsync<EmailTimer>(command);
             return Response(result);
         }
 
@@ -85,7 +85,7 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization()]
         public async Task<IActionResult> ActivateNewEmail([FromBody] ActivateNewEmailCommand command)
         {
-            await bus.SendAsync(command);
+            await Bus.SendAsync(command);
             return Response();
         }
 
@@ -93,7 +93,7 @@ namespace Kozachok.WebApi.Controllers
         [BearerAuthorization]
         public async Task<IActionResult> GetUser([FromRoute(Name = "userId")] Guid userId)
         {
-            var result = await bus.RequestAsync<UserDetails>(new GetUserDetailQuery() { UserId = userId });
+            var result = await Bus.RequestAsync<UserDetails>(new GetUserDetailQuery() { UserId = userId });
             return Response<Models.User.UserDetails>(result);
         }
     }

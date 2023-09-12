@@ -18,6 +18,6 @@ namespace Kozachok.WebApi.Models.Movie
         public MovieType TypeId { get; set; }
         public MovieMainCategory MainCategoryId { get; set; }
         public DateTime ReleaseDate { get; set; }
-        public DateTime CreatedDateUTC { get; private set; }
+        public DateTime CreatedDateUtc { get; private set; }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using Kozachok.Repository.Contexts;
 using Kozachok.Shared.Abstractions.Repositories.Common;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Linq;
 
 namespace Kozachok.Domain.UoW

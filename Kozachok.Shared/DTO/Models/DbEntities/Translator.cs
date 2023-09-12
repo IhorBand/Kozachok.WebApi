@@ -6,15 +6,14 @@ namespace Kozachok.Shared.DTO.Models.DbEntities
 {
     public class Translator : Entity
     {
-        // -> Empty contructor for EF
         public Translator()
         {
-            CreatedDateUTC = DateTime.UtcNow;
+            CreatedDateUtc = DateTime.UtcNow;
         }
 
         public virtual string Name { get; set; }
         public virtual string TranslatorId { get; set; }
         public virtual TranslatorLanguage LanguageId { get; set; }
-        public virtual DateTime CreatedDateUTC { get; private set; }
+        public virtual DateTime CreatedDateUtc { get; private set; }
     }
 }

@@ -1,6 +1,4 @@
-﻿using Kozachok.Domain.Commands.Playlist;
-using Kozachok.Domain.Handlers.Common;
-using Kozachok.Domain.Queries.MovieCatalog;
+﻿using Kozachok.Domain.Handlers.Common;
 using Kozachok.Shared.Abstractions.Bus;
 using Kozachok.Shared.Abstractions.Identity;
 using Kozachok.Shared.Abstractions.Repositories.Common;
@@ -9,13 +7,10 @@ using Kozachok.Shared.DTO.Common;
 using Kozachok.Shared.DTO.Models.DbEntities;
 using MediatR;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 using Kozachok.Domain.Commands.ChatConnection;
 using Kozachok.Utils.Validation;
-using Org.BouncyCastle.Asn1.Esf;
 
 namespace Kozachok.Domain.Handlers.Commands
 {
@@ -56,19 +51,19 @@ namespace Kozachok.Domain.Handlers.Commands
         {
             if (IsUserAuthorized(user) == false)
             {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;
             }
 
             request
-                .IsInvalidGuid(e => e.RoomId, async () => await bus.InvokeDomainNotificationAsync("RoomId is invalid."))
-                .IsInvalidGuid(e => e.UserId, async () => await bus.InvokeDomainNotificationAsync("UserId is invalid."));
+                .IsInvalidGuid(e => e.RoomId, async () => await Bus.InvokeDomainNotificationAsync("RoomId is invalid."))
+                .IsInvalidGuid(e => e.UserId, async () => await Bus.InvokeDomainNotificationAsync("UserId is invalid."));
 
             var currentUser = await userRepository.GetAsync(user.Id.Value);
 
-            if (currentUser == null || (currentUser != null && currentUser.Id == Guid.Empty))
+            if (currentUser == null || currentUser.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;
             }
 
@@ -79,17 +74,17 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var room = await roomRepository.GetAsync(request.RoomId);
 
-            if (room == null || (room != null && room.Id == Guid.Empty))
+            if (room == null || room.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("Room doesn't exist.");
+                await Bus.InvokeDomainNotificationAsync("Room doesn't exist.");
                 return Unit.Value;
             }
 
             var roomUser = await roomUserRepository.FirstOrDefaultAsync(ru => ru.UserId == user.Id && ru.RoomId == request.RoomId);
 
-            if (roomUser == null || (roomUser != null && roomUser.Id == Guid.Empty))
+            if (roomUser == null || roomUser.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("User doesn't have permission to use this room.");
+                await Bus.InvokeDomainNotificationAsync("User doesn't have permission to use this room.");
                 return Unit.Value;
             }
 
@@ -101,7 +96,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 Commit();
             }
 
-            var newConnection = new ChatConnection(request.UserId, request.RoomId, request.ConnectionId);
+            var newConnection = ChatConnection.Create(request.UserId, request.RoomId, request.ConnectionId);
 
             await chatConnectionRepository.AddAsync(newConnection);
             Commit();

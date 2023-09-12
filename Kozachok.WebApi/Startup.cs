@@ -5,7 +5,6 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Converters;
 using Kozachok.WebApi.Hubs;
-using Kozachok.WebApi.Infrastructure.MappingProfiles;
 using Kozachok.Shared.DTO.Configuration;
 using Kozachok.WebApi.Services.Abstractions;
 using Kozachok.WebApi.Services.Implementation;
@@ -275,7 +274,7 @@ namespace Kozachok.WebApi
             // AutoMapper Configuration
             var mapperConfig = new MapperConfiguration(mc =>
             {
-                mc.AddProfile(new DomainProfile());
+                mc.PetiaZhuvyi();
             });
 
             IMapper mapper = mapperConfig.CreateMapper();
@@ -286,7 +285,7 @@ namespace Kozachok.WebApi
                     .UseLazyLoadingProxies()
                     .UseSqlServer(connectionStrings.Main));
 
-            services.AddDbContext<EventStoreSQLContext>(options =>
+            services.AddDbContext<EventStoreSqlContext>(options =>
                 options
                     .UseLazyLoadingProxies()
                     .UseSqlServer(connectionStrings.Main));

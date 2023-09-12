@@ -13,10 +13,10 @@ namespace Kozachok.Shared.DTO.Common
             this.TotalItems = totalItems;
         }
 
-        public virtual int CurrentPage { get; set; }
-        public virtual int TotalPages { get; set; }
-        public virtual int TotalItems { get; set; }
-        public virtual int PageSize { get; set; }
-        public virtual List<TEntity> Items { get; set; }
+        public int CurrentPage { get; set; }
+        public int TotalPages { get; set; }
+        public int TotalItems { get; set; }
+        public int PageSize { get; set; }
+        public List<TEntity> Items { get; set; }
     }
 }

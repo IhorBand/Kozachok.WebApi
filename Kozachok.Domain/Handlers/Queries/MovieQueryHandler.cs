@@ -3,34 +3,37 @@ using Kozachok.Shared;
 using Kozachok.Shared.Abstractions.Bus;
 using Kozachok.Shared.Abstractions.Repositories;
 using Kozachok.Shared.DTO.Common;
-using Kozachok.Shared.DTO.Models.DbEntities;
 using MediatR;
 using System.Threading.Tasks;
 using System.Threading;
+using AutoMapper;
 using Kozachok.Domain.Queries.Movie;
+using Kozachok.Shared.DTO.Models.DomainEntities;
 
 namespace Kozachok.Domain.Handlers.Queries
 {
     public class MovieQueryHandler :
         QueryHandler,
-        IRequestHandler<GetMovieQuery, PagedResult<Movie>>
+        IRequestHandler<GetMovieQuery, PagedResult<MovieDto>>
     {
         private readonly IMovieRepository movieRepository;
+        private readonly IMapper mapper;
 
         public MovieQueryHandler(
             IMediatorHandler bus,
             INotificationHandler<DomainNotification> notifications,
-            IMovieRepository movieRepository
-        )
+            IMovieRepository movieRepository, 
+            IMapper mapper)
         : base(
                 bus,
                 notifications
         )
         {
             this.movieRepository = movieRepository;
+            this.mapper = mapper;
         }
 
-        public async Task<PagedResult<Movie>> Handle(GetMovieQuery request, CancellationToken cancellationToken)
+        public async Task<PagedResult<MovieDto>> Handle(GetMovieQuery request, CancellationToken cancellationToken)
         {
             var currentPage = 1;
             var itemsPerPage = GlobalConstants.DefaultPageSize;
@@ -55,8 +58,8 @@ namespace Kozachok.Domain.Handlers.Queries
                 request.CountryId ?? 0,
                 request.MovieOrderTypeId,
                 request.OrderDirection);
-
-            return result;
+            
+            return mapper.Map<PagedResult<MovieDto>>(result);
         }
     }
 }

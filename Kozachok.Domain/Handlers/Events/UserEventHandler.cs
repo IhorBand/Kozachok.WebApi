@@ -74,7 +74,7 @@ namespace Kozachok.Domain.Handlers.Events
         
         public Task Handle(ActivateUserEvent notification, CancellationToken cancellationToken)
         {
-            //TODO: Semd Welcome email.
+            //TODO: Send Welcome email.
             return Task.CompletedTask;
         }
 

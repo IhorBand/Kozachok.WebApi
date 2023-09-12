@@ -34,7 +34,7 @@ namespace Kozachok.WebApi.Controllers
             [FromQuery(Name = "orderId")] MovieOrderType orderId = MovieOrderType.CreatedDate,
             [FromQuery(Name = "orderDirectionId")] OrderDirection orderDirectionId = OrderDirection.Descending)
         {
-            var result = await bus.RequestAsync(new GetMovieQuery() 
+            var result = await Bus.RequestAsync(new GetMovieQuery() 
             { 
                 Page = page, 
                 ItemsPerPage = itemsPerPage,
@@ -46,7 +46,7 @@ namespace Kozachok.WebApi.Controllers
                 MovieOrderTypeId = orderId,
                 OrderDirection = orderDirectionId
             });
-            return Response<PagedResult<Models.Movie.Movie>>(result);
+            return Response(result);
         }
     }
 }

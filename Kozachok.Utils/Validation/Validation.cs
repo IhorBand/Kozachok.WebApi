@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq.Expressions;
 using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
 using System.Reflection;
 using System.Linq;
 
@@ -39,7 +38,7 @@ namespace Kozachok.Utils.Validation
         {
             var value = expression.Compile()(o);
 
-            if (value == null || (value != null && value == Guid.Empty))
+            if (value == Guid.Empty)
                 action();
 
             return o;

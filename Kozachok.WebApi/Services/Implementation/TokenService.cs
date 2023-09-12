@@ -129,8 +129,8 @@ namespace Kozachok.WebApi.Services.Implementation
             var result = new AuthorizeUserOutputModel()
             {
                 ExpiresInSeconds = (int)expiresIn.TotalSeconds,
-                ExpiresInUTC = expiredIn.ToString("yyyy-MM-dd HH:mm:ss"),
-                IssuedInUTC = now.ToString("yyyy-MM-dd HH:mm:ss"),
+                ExpiresInUtc = expiredIn.ToString("yyyy-MM-dd HH:mm:ss"),
+                IssuedInUtc = now.ToString("yyyy-MM-dd HH:mm:ss"),
                 RefreshToken = Guid.NewGuid().ToString().Replace("-", String.Empty),
                 TokenType = "Bearer",
                 Token = tokenResult,
@@ -138,8 +138,8 @@ namespace Kozachok.WebApi.Services.Implementation
                 UserEmail = user.Email,
                 UserName = user.Name,
                 RefreshTokenExpiresInSeconds = (int)refreshTokenExpiresIn.TotalSeconds,
-                RefreshTokenExpiresInUTC = refreshTokenExpiredIn.ToString("yyyy-MM-dd HH:mm:ss"),
-                RefreshTokenIssuedInUTC = now.ToString("yyyy-MM-dd HH:mm:ss"),
+                RefreshTokenExpiresInUtc = refreshTokenExpiredIn.ToString("yyyy-MM-dd HH:mm:ss"),
+                RefreshTokenIssuedInUtc = now.ToString("yyyy-MM-dd HH:mm:ss"),
                 IsAuthorized = true,
                 IsActive = user.IsActive,
                 Message = "OK"

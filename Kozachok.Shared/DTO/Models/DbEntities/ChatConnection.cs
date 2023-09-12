@@ -5,26 +5,23 @@ namespace Kozachok.Shared.DTO.Models.DbEntities
 {
     public class ChatConnection : Entity
     {
-        // -> Empty contructor for EF
-        public ChatConnection()
-        {
+        public virtual Guid RoomId { get; set; }
+        public virtual Guid UserId { get; set; }
+        public virtual string ConnectionId { get; set; }
+        public virtual DateTime CreatedDateUtc { get; private set; }
 
-        }
-
-        public ChatConnection(
+        public static ChatConnection Create(
             Guid userId,
             Guid roomId,
             string connectionId)
         {
-            UserId = userId;
-            RoomId = roomId;
-            ConnectionId = connectionId;
-            CreatedDateUTC = DateTime.UtcNow;
+            return new ChatConnection
+            {
+                UserId = userId,
+                RoomId = roomId,
+                ConnectionId = connectionId,
+                CreatedDateUtc = DateTime.UtcNow
+            };
         }
-
-        public virtual Guid RoomId { get; set; }
-        public virtual Guid UserId { get; set; }
-        public virtual string ConnectionId { get; set; }
-        public virtual DateTime CreatedDateUTC { get; private set; }
     }
 }

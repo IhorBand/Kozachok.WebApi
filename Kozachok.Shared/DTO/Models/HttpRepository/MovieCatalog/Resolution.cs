@@ -2,7 +2,7 @@
 {
     public class Resolution
     {
-        public string link { get; set; }
-        public string resolutionName { get; set; }
+        public string Link { get; set; }
+        public string ResolutionName { get; set; }
     }
 }

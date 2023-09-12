@@ -10,12 +10,12 @@
         public string? Token { get; set; }
         public string? TokenType { get; set; }
         public int ExpiresInSeconds { get; set; }
-        public string? ExpiresInUTC { get; set; }
-        public string? IssuedInUTC { get; set; }
+        public string? ExpiresInUtc { get; set; }
+        public string? IssuedInUtc { get; set; }
         public string? RefreshToken { get; set; }
         public int RefreshTokenExpiresInSeconds { get; set; }
-        public string? RefreshTokenExpiresInUTC { get; set; }
-        public string? RefreshTokenIssuedInUTC { get; set; }
+        public string? RefreshTokenExpiresInUtc { get; set; }
+        public string? RefreshTokenIssuedInUtc { get; set; }
         public string? Message { get; set; }
     }
 }

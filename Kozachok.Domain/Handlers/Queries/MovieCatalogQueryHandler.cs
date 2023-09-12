@@ -43,7 +43,7 @@ namespace Kozachok.Domain.Handlers.Queries
             
             if (movie == null)
             {
-                await bus.InvokeDomainNotificationAsync("Movie not found.");
+                await Bus.InvokeDomainNotificationAsync("Movie not found.");
                 return null;
             }
             
@@ -58,7 +58,7 @@ namespace Kozachok.Domain.Handlers.Queries
 
             if (movie == null)
             {
-                await bus.InvokeDomainNotificationAsync("Movie not found.");
+                await Bus.InvokeDomainNotificationAsync("Movie not found.");
                 return null;
             }
 
@@ -73,11 +73,11 @@ namespace Kozachok.Domain.Handlers.Queries
 
             if (movie == null)
             {
-                await bus.InvokeDomainNotificationAsync("Movie not found.");
+                await Bus.InvokeDomainNotificationAsync("Movie not found.");
                 return null;
             }
 
-            string movieType = GlobalConstants.MovieTypeFilm;
+            var movieType = GlobalConstants.MovieTypeFilm;
 
             if (movie.TypeId == Shared.DTO.Enums.MovieType.Series)
             {

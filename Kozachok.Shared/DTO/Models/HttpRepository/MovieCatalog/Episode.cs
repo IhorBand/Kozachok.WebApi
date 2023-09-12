@@ -2,8 +2,8 @@
 {
     public class Episode
     {
-        public string episodeID { get; set; }
-        public string episodeName { get; set; }
-        public string seasonID { get; set; }
+        public string EpisodeId { get; set; }
+        public string EpisodeName { get; set; }
+        public string SeasonId { get; set; }
     }
 }

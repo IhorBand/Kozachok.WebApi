@@ -9,6 +9,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Serialization;
 
 namespace Kozachok.Repository.Repositories
 {
@@ -37,7 +38,7 @@ namespace Kozachok.Repository.Repositories
             var totalCountParameter = new SqlParameter { ParameterName = "@TotalCount", Direction = System.Data.ParameterDirection.Output, SqlDbType = System.Data.SqlDbType.Int };
             var totalPagesParameter = new SqlParameter { ParameterName = "@TotalPages", Direction = System.Data.ParameterDirection.Output, SqlDbType = System.Data.SqlDbType.Int };
 
-            List<SqlParameter> parameters = new List<SqlParameter>
+            var parameters = new []
             {
                 new SqlParameter { ParameterName = "@SearchValue", Value = searchValue, Direction = System.Data.ParameterDirection.Input, SqlDbType = System.Data.SqlDbType.NVarChar },
                 new SqlParameter { ParameterName = "@PageIndex", Value = pageIndex, Direction = System.Data.ParameterDirection.Input, SqlDbType = System.Data.SqlDbType.Int },
@@ -52,8 +53,8 @@ namespace Kozachok.Repository.Repositories
                 totalCountParameter,
                 totalPagesParameter
             };
-
-            var result = await context.Set<Movie>().FromSqlRaw(sql, parameters.ToArray()).ToListAsync();
+            
+            var result = await Context.Set<Movie>().FromSqlRaw(sql, parameters).ToListAsync();
 
             var model = new PagedResult<Movie>(pageIndex, (int)totalPagesParameter.Value, (int)totalCountParameter.Value, pageSize, result);
 

@@ -1,6 +1,5 @@
 ﻿using Kozachok.Shared.Abstractions.Identity;
 using Kozachok.Shared.DTO.Configuration;
-using System.Security.Claims;
 
 namespace Kozachok.WebApi.Auth
 {
@@ -14,7 +13,7 @@ namespace Kozachok.WebApi.Auth
         {
             get
             {
-                var guid = Guid.Empty;
+                Guid guid;
                 Guid.TryParse(GetClaimValue(JwtCustomClaimNames.UserId), out guid);
                 return guid;
             }
@@ -38,16 +37,8 @@ namespace Kozachok.WebApi.Auth
 
         private string? GetClaimValue(string claimName)
         {
-            if(httpContextAccessor.HttpContext != null && httpContextAccessor.HttpContext.User != null && httpContextAccessor.HttpContext.User.Claims != null)
-            {
-                var claim = httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(e => e.Type == claimName);
-                if(claim != null)
-                {
-                    return claim.Value;
-                }
-            }
-
-            return null;
+            var claim = httpContextAccessor.HttpContext?.User.Claims.FirstOrDefault(e => e.Type == claimName);
+            return claim?.Value;
         }
     }
 }
