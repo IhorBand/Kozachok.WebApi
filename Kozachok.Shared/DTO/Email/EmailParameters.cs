@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Kozachok.Shared.DTO.Email
+﻿namespace Kozachok.Shared.DTO.Email
 {
     public class EmailParameters
     {

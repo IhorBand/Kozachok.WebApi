@@ -1,31 +1,31 @@
 ﻿using Kozachok.Shared.DTO.Common;
 using Kozachok.Shared.DTO.Enums;
 using System;
+using System.Collections.Generic;
 
 namespace Kozachok.Shared.DTO.Models.DbEntities
 {
     public class Room : Entity
     {
-        // -> Empty contructor for EF
-        public Room()
-        {
+        public virtual string Name { get; set; }
+        public virtual RoomType RoomTypeId { get; set; }
+        public virtual Guid OwnerUserId { get; set; }
+        public virtual DateTime CreatedDateUtc { get; private set; }
 
-        }
+        public virtual ICollection<RoomUser> RoomUsers { get; set; }
 
-        public Room(
+        public static Room Create(
             string name,
             RoomType roomTypeId,
             Guid ownerUserId)
         {
-            Name = name;
-            RoomTypeId = roomTypeId;
-            OwnerUserId = ownerUserId;
-            CreatedDateUTC = DateTime.UtcNow;
+            return new Room
+            {
+                Name = name,
+                RoomTypeId = roomTypeId,
+                OwnerUserId = ownerUserId,
+                CreatedDateUtc = DateTime.UtcNow
+            };
         }
-
-        public virtual string Name { get; set; }
-        public virtual RoomType RoomTypeId { get; set; }
-        public virtual Guid OwnerUserId { get; set; }
-        public virtual DateTime CreatedDateUTC { get; private set; }
     }
 }

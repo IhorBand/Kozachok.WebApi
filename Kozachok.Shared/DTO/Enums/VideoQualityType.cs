@@ -2,10 +2,10 @@
 {
     public enum VideoQualityType : int
     {
-        Low_360 = 0,
-        Medium_480 = 1,
-        High_720 = 2,
-        HD_1080 = 3,
-        UltraHD_1080 = 4
+        Low360 = 0,
+        Medium480 = 1,
+        High720 = 2,
+        Hd1080 = 3,
+        UltraHd1080 = 4
     }
 }

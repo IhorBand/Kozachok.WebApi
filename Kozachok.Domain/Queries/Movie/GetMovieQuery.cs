@@ -1,10 +1,11 @@
 ﻿using Kozachok.Shared.Abstractions.Commands;
 using Kozachok.Shared.DTO.Common;
 using Kozachok.Shared.DTO.Enums;
+using Kozachok.Shared.DTO.Models.DomainEntities;
 
 namespace Kozachok.Domain.Queries.Movie
 {
-    public class GetMovieQuery : RequestCommand<PagedResult<Shared.DTO.Models.DbEntities.Movie>>
+    public class GetMovieQuery : RequestCommand<PagedResult<MovieDto>>
     {
         public int? Page { get; set; }
         public int? ItemsPerPage { get; set; }

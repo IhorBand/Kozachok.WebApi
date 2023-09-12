@@ -13,6 +13,9 @@ namespace Kozachok.Repository.Mapping
             entity.ToTable("T_Room", "dbo");
             entity.Property(p => p.Id).HasColumnName("Id");
             entity.Property(p => p.Id).ValueGeneratedOnAdd();
+
+            entity.HasMany(x => x.RoomUsers)
+                .WithOne(x => x.Room);
         }
     }
 }

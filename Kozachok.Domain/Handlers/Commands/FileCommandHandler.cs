@@ -7,18 +7,20 @@ using MediatR;
 using System;
 using System.Threading.Tasks;
 using System.Threading;
+using AutoMapper;
 using Kozachok.Utils.Validation;
 using Kozachok.Shared.DTO.Configuration;
 using Kozachok.Shared.Abstractions.Identity;
 using Kozachok.Domain.Commands.File;
 using Microsoft.Extensions.Logging;
 using Kozachok.Shared.DTO.Models.DbEntities;
+using Kozachok.Shared.DTO.Models.DomainEntities;
 
 namespace Kozachok.Domain.Handlers.Commands
 {
     public class FileCommandHandler :
         CommandHandler,
-        IRequestHandler<UpdateUserThumbnailImageCommand, File>
+        IRequestHandler<UpdateUserThumbnailImageCommand, FileDto>
     {
         private readonly IFileServerRepository fileServerRepository;
         private readonly IFileRepository fileRepository;
@@ -26,6 +28,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
         private readonly FileServerConfiguration fileServerConfiguration;
         private readonly IUser user;
+        private readonly IMapper mapper;
         private readonly ILogger<FileCommandHandler> logger;
 
         public FileCommandHandler(
@@ -37,8 +40,8 @@ namespace Kozachok.Domain.Handlers.Commands
             IUserRepository userRepository,
             FileServerConfiguration fileServerConfiguration,
             IUser user,
-            ILogger<FileCommandHandler> logger
-        )
+            IMapper mapper,
+            ILogger<FileCommandHandler> logger)
         : base(
                 uow,
                 bus,
@@ -50,13 +53,14 @@ namespace Kozachok.Domain.Handlers.Commands
             this.userRepository = userRepository;
             this.fileServerConfiguration = fileServerConfiguration;
             this.user = user;
+            this.mapper = mapper;
             this.logger = logger;
         }
 
-        public async Task<File> Handle(UpdateUserThumbnailImageCommand request, CancellationToken cancellationToken)
+        public async Task<FileDto> Handle(UpdateUserThumbnailImageCommand request, CancellationToken cancellationToken)
         {
             request
-                .Is(e => e.File.Length <= 0, async () => await bus.InvokeDomainNotificationAsync("File wasn't uploaded."));
+                .Is(e => e.File.Length <= 0, async () => await Bus.InvokeDomainNotificationAsync("File wasn't uploaded."));
 
             if (!IsValidOperation())
             {
@@ -65,7 +69,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
             if (IsUserAuthorized(user) == false)
             {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return null;
             }
 
@@ -73,15 +77,15 @@ namespace Kozachok.Domain.Handlers.Commands
 
             if (currentUser == null)
             {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return null;
             }
 
             var fileServer = await fileServerRepository.FirstOrDefaultAsync(fs => fs.IsActive);
 
-            if (fileServer == null || (fileServer != null && fileServer.Id == Guid.Empty))
+            if (fileServer == null || fileServer.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("No available file server at the moment.");
+                await Bus.InvokeDomainNotificationAsync("No available file server at the moment.");
                 return null;
             }
 
@@ -91,7 +95,7 @@ namespace Kozachok.Domain.Handlers.Commands
             var fullFilePath = System.IO.Path.Combine(filePath, fileName);
             var fileUrl = fileServer.Url + fileServerConfiguration.UserAvatarPath + fileName;
 
-            var uploadedFile = new File(fileName, fileServer.Id, Shared.DTO.Enums.FileType.Image, extension, fullFilePath, fileUrl, true);
+            var uploadedFile = File.Create(fileName, fileServer.Id, Shared.DTO.Enums.FileType.Image, extension, fullFilePath, fileUrl, true);
             uploadedFile.SetSize(request.File.Length);
 
             await fileRepository.AddAsync(uploadedFile);
@@ -119,9 +123,9 @@ namespace Kozachok.Domain.Handlers.Commands
                 {
                     Commit();
 
-                    using (var fileStream = new System.IO.FileStream(fullFilePath, System.IO.FileMode.Create))
+                    await using (var fileStream = new System.IO.FileStream(fullFilePath, System.IO.FileMode.Create))
                     {
-                        await request.File.CopyToAsync(fileStream);
+                        await request.File.CopyToAsync(fileStream, cancellationToken);
                     }
 
                     if (previousImage != null)
@@ -132,7 +136,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 }
                 catch (Exception ex)
                 {
-                    await bus.InvokeDomainNotificationAsync("Cannot Update User's Thumbnail Image.");
+                    await Bus.InvokeDomainNotificationAsync("Cannot Update User's Thumbnail Image.");
                     var userIdExStr = user != null ? user.Id.ToString() : "Unauthorized User";
                     logger.LogError(ex, $"Cannot Update User's Thumbnail Image. UserId: {userIdExStr}");
                     throw;
@@ -140,12 +144,12 @@ namespace Kozachok.Domain.Handlers.Commands
             }
             catch(Exception ex)
             {
-                await bus.InvokeDomainNotificationAsync("Cannot Update User's Thumbnail Image.");
+                await Bus.InvokeDomainNotificationAsync("Cannot Update User's Thumbnail Image.");
                 var userIdExStr = user != null ? user.Id.ToString() : "Unauthorized User";
                 logger.LogError(ex, $"Cannot Update User's Thumbnail Image. UserId: {userIdExStr}");
             }
 
-            return uploadedFile;
+            return mapper.Map<FileDto>(uploadedFile);
         }
     }
 }

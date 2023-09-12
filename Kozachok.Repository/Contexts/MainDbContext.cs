@@ -1,9 +1,6 @@
 ﻿using Kozachok.Repository.Config;
 using Kozachok.Shared.Abstractions.Mapping;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
-using System.Reflection;
 
 namespace Kozachok.Repository.Contexts
 {

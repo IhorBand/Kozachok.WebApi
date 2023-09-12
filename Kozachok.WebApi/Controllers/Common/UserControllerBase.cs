@@ -17,17 +17,11 @@ namespace Kozachok.WebApi.Controllers.Common
             get
             {
                 var idStr = this.GetClaimValue(JwtCustomClaimNames.UserId);
-                
-                if (idStr == null)
-                {
-                    return Guid.Empty;
-                }
-
                 return new Guid(idStr);
             }
         }
 
-        protected string? Email { get => this.GetClaimValue(JwtCustomClaimNames.Email); }
-        protected string? UserName { get => this.GetClaimValue(JwtCustomClaimNames.UserName); }
+        protected string? Email => this.GetClaimValue(JwtCustomClaimNames.Email);
+        protected string? UserName => this.GetClaimValue(JwtCustomClaimNames.UserName);
     }
 }

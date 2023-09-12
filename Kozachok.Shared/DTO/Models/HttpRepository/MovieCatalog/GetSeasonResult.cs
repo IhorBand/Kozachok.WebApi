@@ -4,8 +4,8 @@ namespace Kozachok.Shared.DTO.Models.HttpRepository.MovieCatalog
 {
     public class GetSeasonResult
     {
-        public List<Episode> episodes { get; set; }
-        public List<Season> seasons { get; set; }
-        public string translator_id { get; set; }
+        public List<Episode> Episodes { get; set; }
+        public List<Season> Seasons { get; set; }
+        public string TranslatorId { get; set; }
     }
 }

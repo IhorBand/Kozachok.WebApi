@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace Kozachok.Shared.DTO.Models.HttpRepository.MovieCatalog
 {
     public class Stream
     {
-        public string episode { get; set; }
-        public List<Resolution> resolutions { get; set; }
-        public string season { get; set; }
+        public string Episode { get; set; }
+        public List<Resolution> Resolutions { get; set; }
+        public string Season { get; set; }
     }
 }

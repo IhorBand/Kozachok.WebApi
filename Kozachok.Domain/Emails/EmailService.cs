@@ -5,7 +5,6 @@ using sib_api_v3_sdk.Client;
 using sib_api_v3_sdk.Model;
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
 
 namespace Kozachok.Domain.Emails
 {
@@ -28,17 +27,17 @@ namespace Kozachok.Domain.Emails
             conf.ApiKey.Add("api-key", mailConfiguration.ApiKey);
 
             var apiInstance = new TransactionalEmailsApi(conf);
-            SendSmtpEmailSender Email = new SendSmtpEmailSender(mailConfiguration.FromName, mailConfiguration.FromEmail);
-            List<SendSmtpEmailTo> To = new List<SendSmtpEmailTo>
+            var email = new SendSmtpEmailSender(mailConfiguration.FromName, mailConfiguration.FromEmail);
+            var to = new List<SendSmtpEmailTo>
             {
-                new SendSmtpEmailTo(toEmail, null)
+                new SendSmtpEmailTo(toEmail)
             };
 
             try
             {
-                var sendSmtpEmail = new SendSmtpEmail(Email, To, null, null, null, null, null, null, null, null, templateId, parameters);
-                CreateSmtpEmail result = await apiInstance.SendTransacEmailAsync(sendSmtpEmail);
-                logger.LogInformation("Email sent successfullty.");
+                var sendSmtpEmail = new SendSmtpEmail(email, to, templateId: templateId, _params: parameters);
+                await apiInstance.SendTransacEmailAsync(sendSmtpEmail);
+                logger.LogInformation("Email sent successfully.");
             }
             catch (Exception e)
             {
@@ -52,18 +51,18 @@ namespace Kozachok.Domain.Emails
             conf.ApiKey.Add("api-key", mailConfiguration.ApiKey);
 
             var apiInstance = new TransactionalEmailsApi(conf);
-            SendSmtpEmailSender Email = new SendSmtpEmailSender(mailConfiguration.FromName, mailConfiguration.FromEmail);
-            SendSmtpEmailTo smtpEmailTo = new SendSmtpEmailTo(toEmail, null);
-            List<SendSmtpEmailTo> To = new List<SendSmtpEmailTo>
+            var email = new SendSmtpEmailSender(mailConfiguration.FromName, mailConfiguration.FromEmail);
+            var smtpEmailTo = new SendSmtpEmailTo(toEmail);
+            var to = new List<SendSmtpEmailTo>
             {
                 smtpEmailTo
             };
 
             try
             {
-                var sendSmtpEmail = new SendSmtpEmail(Email, To, null, null, htmlContent, null, subject);
-                CreateSmtpEmail result = await apiInstance.SendTransacEmailAsync(sendSmtpEmail);
-                logger.LogInformation("Email sent successfullty.");
+                var sendSmtpEmail = new SendSmtpEmail(email, to, null, null, htmlContent, null, subject);
+                await apiInstance.SendTransacEmailAsync(sendSmtpEmail);
+                logger.LogInformation("Email sent successfully.");
             }
             catch (Exception e)
             {

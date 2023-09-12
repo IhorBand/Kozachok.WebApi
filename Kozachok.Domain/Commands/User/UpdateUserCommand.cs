@@ -1,5 +1,4 @@
 ﻿using Kozachok.Shared.Abstractions.Commands;
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace Kozachok.Domain.Commands.User

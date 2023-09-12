@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.InteropServices;
 using DbUp;
 using Microsoft.Extensions.Configuration;
@@ -32,9 +30,9 @@ var configuration = new ConfigurationBuilder()
         .Build();
 
 var connectionString = configuration.GetConnectionString("Main");
-string dbScriptFolder = string.Empty;
+string dbScriptFolder;
 
-if (args != null && args.Length > 0)
+if (args.Length > 0)
 {
     dbScriptFolder = Path.GetFullPath(args[0]);
 }
@@ -42,11 +40,11 @@ else
 {
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
     {
-        dbScriptFolder = Path.GetFullPath(Path.Combine(baseDirectory == null ? string.Empty : baseDirectory, "..\\..\\..\\..\\database\\"));
+        dbScriptFolder = Path.GetFullPath(Path.Combine(baseDirectory, "..\\..\\..\\..\\database\\"));
     }
     else
     {
-        dbScriptFolder = Path.GetFullPath(Path.Combine(baseDirectory == null ? string.Empty : baseDirectory, "../../../../database/"));
+        dbScriptFolder = Path.GetFullPath(Path.Combine(baseDirectory, "../../../../database/"));
     }
 }
 

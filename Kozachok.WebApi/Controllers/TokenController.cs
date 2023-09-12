@@ -6,8 +6,6 @@ using Kozachok.WebApi.Controllers.Common;
 using Kozachok.Shared.Abstractions.Bus;
 using MediatR;
 using Kozachok.Shared.DTO.Common;
-using Kozachok.WebApi.Auth;
-using Kozachok.Shared.DTO.Configuration;
 using AutoMapper;
 
 namespace Kozachok.WebApi.Controllers

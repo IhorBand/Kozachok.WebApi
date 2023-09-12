@@ -58,22 +58,22 @@ namespace Kozachok.Domain.Handlers.Commands
         public async Task<EmailTimer> Handle(CreateUserCommand request, CancellationToken cancellationToken)
         {
             request
-                .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid e-mail."))
-                .IsNullEmptyOrWhitespace(e => e.Name, async () => await bus.InvokeDomainNotificationAsync("Invalid name."))
-                .IsNullEmptyOrWhitespace(e => e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password."))
-                .IsMatchMaxLength(e => e.Name, async () => await bus.InvokeDomainNotificationAsync("Name is too big."))
-                .IsMatchMaxLength(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Email is too big."))
-                .IsMatchMaxLength(e => e.Password, async () => await bus.InvokeDomainNotificationAsync("Password is too big."))
-                .IsMatchMaxLength(e => e.PasswordConfirmation, async () => await bus.InvokeDomainNotificationAsync("Password Confirmation is too big."))
-                .Is(e => e.PasswordConfirmation != e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password confirmation."))
-                .Is(e => userRepository.AnyAsync(u => u.Email == request.Email).Result, async () => await bus.InvokeDomainNotificationAsync("E-mail already exists."));
+                .IsInvalidEmail(e => e.Email, async () => await Bus.InvokeDomainNotificationAsync("Invalid e-mail."))
+                .IsNullEmptyOrWhitespace(e => e.Name, async () => await Bus.InvokeDomainNotificationAsync("Invalid name."))
+                .IsNullEmptyOrWhitespace(e => e.Password, async () => await Bus.InvokeDomainNotificationAsync("Invalid password."))
+                .IsMatchMaxLength(e => e.Name, async () => await Bus.InvokeDomainNotificationAsync("Name is too big."))
+                .IsMatchMaxLength(e => e.Email, async () => await Bus.InvokeDomainNotificationAsync("Email is too big."))
+                .IsMatchMaxLength(e => e.Password, async () => await Bus.InvokeDomainNotificationAsync("Password is too big."))
+                .IsMatchMaxLength(e => e.PasswordConfirmation, async () => await Bus.InvokeDomainNotificationAsync("Password Confirmation is too big."))
+                .Is(e => e.PasswordConfirmation != e.Password, async () => await Bus.InvokeDomainNotificationAsync("Invalid password confirmation."))
+                .Is(e => userRepository.AnyAsync(u => u.Email == request.Email).Result, async () => await Bus.InvokeDomainNotificationAsync("E-mail already exists."));
 
             if (!IsValidOperation())
             {
                 return null;
             }
 
-            var entity = new User(request.Name, request.Email, request.Password, false);
+            var entity = User.Create(request.Name, request.Email, request.Password, false);
 
             await userRepository.AddAsync(entity);
 
@@ -81,12 +81,12 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var nextAttemptDate = DateTime.UtcNow.AddMinutes(5);
 
-            var userConfirmationCode = new UserConfirmationCode(entity.Id, confirmationCodeStr, Shared.DTO.Enums.ConfirmationCodeType.EmailConfirmation, 1, nextAttemptDate);
+            var userConfirmationCode = UserConfirmationCode.Create(entity.Id, confirmationCodeStr, Shared.DTO.Enums.ConfirmationCodeType.EmailConfirmation, 1, nextAttemptDate);
             await userConfirmationCodeRepository.AddAsync(userConfirmationCode);
 
             Commit();
 
-            await bus.InvokeAsync(new CreateUserEvent(entity.Id, entity.Name, entity.Email, entity.Password, userConfirmationCode.ConfirmationCode)).ConfigureAwait(false);
+            await Bus.InvokeAsync(new CreateUserEvent(entity.Id, entity.Name, entity.Email, entity.Password, userConfirmationCode.ConfirmationCode)).ConfigureAwait(false);
 
             return new EmailTimer() { AttemtNumber = 1, NextAttemptDate = nextAttemptDate };
         }
@@ -95,21 +95,21 @@ namespace Kozachok.Domain.Handlers.Commands
         {
             if (IsUserAuthorized(user) == false)
             {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;
             }
 
             var original = await userRepository.GetAsync(user.Id.Value);
 
-            if (original == null || (original != null && original.Id == Guid.Empty))
+            if (original == null || original.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;
             }
 
             request
-                .IsNullEmptyOrWhitespace(e => e.Name, async () => await bus.InvokeDomainNotificationAsync("Invalid name."))
-                .IsMatchMaxLength(e => e.Name, async () => await bus.InvokeDomainNotificationAsync("Name is too big."));
+                .IsNullEmptyOrWhitespace(e => e.Name, async () => await Bus.InvokeDomainNotificationAsync("Invalid name."))
+                .IsMatchMaxLength(e => e.Name, async () => await Bus.InvokeDomainNotificationAsync("Name is too big."));
 
             if (!IsValidOperation())
             {
@@ -121,7 +121,7 @@ namespace Kozachok.Domain.Handlers.Commands
             await userRepository.UpdateAsync(original);
 
             Commit();
-            await bus.InvokeAsync(new UpdateUserEvent(original.Id, original.Name, original.Email));
+            await Bus.InvokeAsync(new UpdateUserEvent(original.Id, original.Name, original.Email));
 
             return Unit.Value;
         }
@@ -130,24 +130,24 @@ namespace Kozachok.Domain.Handlers.Commands
         {
             if (IsUserAuthorized(user) == false)
             {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;
             }
 
             var original = await userRepository.GetAsync(user.Id.Value);
 
-            if (original == null || (original != null && original.Id == Guid.Empty))
+            if (original == null || original.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;
             }
 
             request
-                .IsNullEmptyOrWhitespace(e => e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password."))
-                .Is(e => e.PasswordConfirmation != e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password confirmation."))
-                .IsMatchMaxLength(e => e.Password, async () => await bus.InvokeDomainNotificationAsync("Password is too big."))
-                .IsMatchMaxLength(e => e.PasswordConfirmation, async () => await bus.InvokeDomainNotificationAsync("PasswordConfirmation is too big."))
-                .Is(e => !original.CheckPassword(e.OldPassword), async () => await bus.InvokeDomainNotificationAsync("Old Password is incorrect."));
+                .IsNullEmptyOrWhitespace(e => e.Password, async () => await Bus.InvokeDomainNotificationAsync("Invalid password."))
+                .Is(e => e.PasswordConfirmation != e.Password, async () => await Bus.InvokeDomainNotificationAsync("Invalid password confirmation."))
+                .IsMatchMaxLength(e => e.Password, async () => await Bus.InvokeDomainNotificationAsync("Password is too big."))
+                .IsMatchMaxLength(e => e.PasswordConfirmation, async () => await Bus.InvokeDomainNotificationAsync("PasswordConfirmation is too big."))
+                .Is(e => !original.CheckPassword(e.OldPassword), async () => await Bus.InvokeDomainNotificationAsync("Old Password is incorrect."));
 
             if (!IsValidOperation())
             {
@@ -159,7 +159,7 @@ namespace Kozachok.Domain.Handlers.Commands
             await userRepository.UpdateAsync(original);
 
             Commit();
-            await bus.InvokeAsync(new ChangeUserPasswordEvent(original.Id, original.Password));
+            await Bus.InvokeAsync(new ChangeUserPasswordEvent(original.Id, original.Password));
 
             return Unit.Value;
         }
@@ -168,22 +168,22 @@ namespace Kozachok.Domain.Handlers.Commands
         {
             if (IsUserAuthorized(user) == false)
             {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;
             }
 
             var original = await userRepository.GetAsync(user.Id.Value);
 
-            if (original == null || (original != null && original.Id == Guid.Empty))
+            if (original == null || original.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;
             }
 
             await userRepository.DeleteAsync(user.Id.Value);
 
             Commit();
-            await bus.InvokeAsync(new DeleteUserEvent(user.Id.Value));
+            await Bus.InvokeAsync(new DeleteUserEvent(user.Id.Value));
 
             return Unit.Value;
         }
@@ -191,9 +191,9 @@ namespace Kozachok.Domain.Handlers.Commands
         public async Task<EmailTimer> Handle(ResendActivationCodeCommand request, CancellationToken cancellationToken)
         {
             request
-                .IsNullEmptyOrWhitespace(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Please, provide E-mail."))
-                .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid E-mail."))
-                .IsMatchMaxLength(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("E-mail is too big."));
+                .IsNullEmptyOrWhitespace(e => e.Email, async () => await Bus.InvokeDomainNotificationAsync("Please, provide E-mail."))
+                .IsInvalidEmail(e => e.Email, async () => await Bus.InvokeDomainNotificationAsync("Invalid E-mail."))
+                .IsMatchMaxLength(e => e.Email, async () => await Bus.InvokeDomainNotificationAsync("E-mail is too big."));
             
             if (!IsValidOperation())
             {
@@ -202,21 +202,21 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var currentUser = await userRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
 
-            if (currentUser == null || (currentUser != null && currentUser.Id == Guid.Empty))
+            if (currentUser == null || currentUser.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("Cannot Send Activation Code.");
+                await Bus.InvokeDomainNotificationAsync("Cannot Send Activation Code.");
                 return null;
             }
 
             if(currentUser.IsActive)
             {
-                await bus.InvokeDomainNotificationAsync("Cannot Send Activation Code.");
+                await Bus.InvokeDomainNotificationAsync("Cannot Send Activation Code.");
                 return null;
             }
 
             var previousConfirmationCode = await userConfirmationCodeRepository
                 .Query(ucc => ucc.UserId == currentUser.Id && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.EmailConfirmation)
-                .OrderByDescending(ucc => ucc.CreatedDateUTC)
+                .OrderByDescending(ucc => ucc.CreatedDateUtc)
                 .FirstOrDefaultAsync();
 
             byte attemptNum = 1;
@@ -224,7 +224,7 @@ namespace Kozachok.Domain.Handlers.Commands
             {
                 if (previousConfirmationCode.NextAttemptDate > DateTime.UtcNow)
                 {
-                    await bus.InvokeDomainNotificationAsync($"Please, wait {(previousConfirmationCode.NextAttemptDate - DateTime.UtcNow)}.");
+                    await Bus.InvokeDomainNotificationAsync($"Please, wait {(previousConfirmationCode.NextAttemptDate - DateTime.UtcNow)}.");
                     return null;
                 }
 
@@ -249,11 +249,11 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var confirmationCodeStr = Guid.NewGuid().ToString().Replace("-", "") + currentUser.Id.ToString().Replace("-", "");
 
-            var userConfirmationCode = new UserConfirmationCode(currentUser.Id, confirmationCodeStr, Shared.DTO.Enums.ConfirmationCodeType.EmailConfirmation, attemptNum, nextAttemptDate);
+            var userConfirmationCode = UserConfirmationCode.Create(currentUser.Id, confirmationCodeStr, Shared.DTO.Enums.ConfirmationCodeType.EmailConfirmation, attemptNum, nextAttemptDate);
             await userConfirmationCodeRepository.AddAsync(userConfirmationCode);
 
             Commit();
-            await bus.InvokeAsync(new ResendActivationCodeEvent(currentUser.Id, currentUser.Name, currentUser.Email, userConfirmationCode.ConfirmationCode)).ConfigureAwait(false);
+            await Bus.InvokeAsync(new ResendActivationCodeEvent(currentUser.Id, currentUser.Name, currentUser.Email, userConfirmationCode.ConfirmationCode)).ConfigureAwait(false);
 
             return new EmailTimer() { AttemtNumber = attemptNum, NextAttemptDate = nextAttemptDate };
         }
@@ -261,7 +261,7 @@ namespace Kozachok.Domain.Handlers.Commands
         public async Task<Unit> Handle(ActivateUserCommand request, CancellationToken cancellationToken)
         {
             request
-                .IsNullEmptyOrWhitespace(e => e.ConfirmationCode, async () => await bus.InvokeDomainNotificationAsync("Please, provide Confirmation Code."));
+                .IsNullEmptyOrWhitespace(e => e.ConfirmationCode, async () => await Bus.InvokeDomainNotificationAsync("Please, provide Confirmation Code."));
 
             if (!IsValidOperation())
             {
@@ -272,21 +272,21 @@ namespace Kozachok.Domain.Handlers.Commands
             
             if (userConfirmationCode == null)
             {
-                await bus.InvokeDomainNotificationAsync("Confirmation Code is Invalid.");
+                await Bus.InvokeDomainNotificationAsync("Confirmation Code is Invalid.");
                 return Unit.Value;
             }
 
             var currentUser = await userRepository.GetAsync(userConfirmationCode.UserId);
 
-            if (currentUser == null || (currentUser != null && currentUser.Id == Guid.Empty))
+            if (currentUser == null || currentUser.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("Cannot Activate User.");
+                await Bus.InvokeDomainNotificationAsync("Cannot Activate User.");
                 return Unit.Value;
             }
 
             if (currentUser.IsActive)
             {
-                await bus.InvokeDomainNotificationAsync("Cannot Activate User.");
+                await Bus.InvokeDomainNotificationAsync("Cannot Activate User.");
                 return Unit.Value;
             }
 
@@ -302,7 +302,7 @@ namespace Kozachok.Domain.Handlers.Commands
             }
 
             Commit();
-            await bus.InvokeAsync(new ActivateUserEvent(currentUser.Id, currentUser.Name, currentUser.Email, userConfirmationCode.ConfirmationCode));
+            await Bus.InvokeAsync(new ActivateUserEvent(currentUser.Id, currentUser.Name, currentUser.Email, userConfirmationCode.ConfirmationCode));
 
             return Unit.Value;
         }
@@ -310,9 +310,9 @@ namespace Kozachok.Domain.Handlers.Commands
         public async Task<EmailTimer> Handle(SendForgetPasswordEmailCommand request, CancellationToken cancellationToken)
         {
             request
-                .IsNullEmptyOrWhitespace(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Please, provide E-mail."))
-                .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid E-mail."))
-                .IsMatchMaxLength(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("E-mail is too big."));
+                .IsNullEmptyOrWhitespace(e => e.Email, async () => await Bus.InvokeDomainNotificationAsync("Please, provide E-mail."))
+                .IsInvalidEmail(e => e.Email, async () => await Bus.InvokeDomainNotificationAsync("Invalid E-mail."))
+                .IsMatchMaxLength(e => e.Email, async () => await Bus.InvokeDomainNotificationAsync("E-mail is too big."));
 
             if (!IsValidOperation())
             {
@@ -321,15 +321,15 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var currentUser = await userRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
 
-            if (currentUser == null || (currentUser != null && currentUser.Id == Guid.Empty))
+            if (currentUser == null || currentUser.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("Cannot Send Forget Password Code.");
+                await Bus.InvokeDomainNotificationAsync("Cannot Send Forget Password Code.");
                 return null;
             }
 
             var previousCode = await userConfirmationCodeRepository
                 .Query(ucc => ucc.UserId == currentUser.Id && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.ForgotPassword)
-                .OrderByDescending(ucc => ucc.CreatedDateUTC)
+                .OrderByDescending(ucc => ucc.CreatedDateUtc)
                 .FirstOrDefaultAsync();
 
             byte attemptNum = 1;
@@ -337,7 +337,7 @@ namespace Kozachok.Domain.Handlers.Commands
             {
                 if (previousCode.NextAttemptDate > DateTime.UtcNow)
                 {
-                    await bus.InvokeDomainNotificationAsync($"Please, wait {(previousCode.NextAttemptDate - DateTime.UtcNow)}.");
+                    await Bus.InvokeDomainNotificationAsync($"Please, wait {(previousCode.NextAttemptDate - DateTime.UtcNow)}.");
                     return null;
                 }
 
@@ -351,23 +351,17 @@ namespace Kozachok.Domain.Handlers.Commands
                 }
             }
 
-            DateTime nextAttemptDate = DateTime.UtcNow;
-            if (attemptNum < 3)
-            {
-                nextAttemptDate = nextAttemptDate.AddMinutes(5);
-            }
-            else
-            {
-                nextAttemptDate = nextAttemptDate.AddDays(1);
-            }
+            var nextAttemptDate = DateTime.UtcNow;
+
+            nextAttemptDate = attemptNum < 3 ? nextAttemptDate.AddMinutes(5) : nextAttemptDate.AddDays(1);
             
             var forgetPasswordCodeStr = Guid.NewGuid().ToString().Replace("-", "") + currentUser.Id.ToString().Replace("-", "");
 
-            var userForgetPasswordCode = new UserConfirmationCode(currentUser.Id, forgetPasswordCodeStr, Shared.DTO.Enums.ConfirmationCodeType.ForgotPassword, attemptNum, nextAttemptDate);
+            var userForgetPasswordCode = UserConfirmationCode.Create(currentUser.Id, forgetPasswordCodeStr, Shared.DTO.Enums.ConfirmationCodeType.ForgotPassword, attemptNum, nextAttemptDate);
             await userConfirmationCodeRepository.AddAsync(userForgetPasswordCode);
 
             Commit();
-            await bus.InvokeAsync(new SendForgetPasswordEmailEvent(currentUser.Id, currentUser.Name, currentUser.Email, userForgetPasswordCode.ConfirmationCode)).ConfigureAwait(false);
+            await Bus.InvokeAsync(new SendForgetPasswordEmailEvent(currentUser.Id, currentUser.Name, currentUser.Email, userForgetPasswordCode.ConfirmationCode)).ConfigureAwait(false);
 
             return new EmailTimer() { AttemtNumber = attemptNum, NextAttemptDate = nextAttemptDate };
         }
@@ -375,10 +369,10 @@ namespace Kozachok.Domain.Handlers.Commands
         public async Task<Unit> Handle(ForgetPasswordCommand request, CancellationToken cancellationToken)
         {
             request
-                .IsNullEmptyOrWhitespace(e => e.ForgetPasswordCode, async () => await bus.InvokeDomainNotificationAsync("Please, provide Forget Password Code."))
-                .IsNullEmptyOrWhitespace(e => e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password."))
-                .IsMatchMaxLength(e => e.Password, async () => await bus.InvokeDomainNotificationAsync("Password is too big."))
-                .Is(e => e.PasswordConfirmation != e.Password, async () => await bus.InvokeDomainNotificationAsync("Invalid password confirmation."));
+                .IsNullEmptyOrWhitespace(e => e.ForgetPasswordCode, async () => await Bus.InvokeDomainNotificationAsync("Please, provide Forget Password Code."))
+                .IsNullEmptyOrWhitespace(e => e.Password, async () => await Bus.InvokeDomainNotificationAsync("Invalid password."))
+                .IsMatchMaxLength(e => e.Password, async () => await Bus.InvokeDomainNotificationAsync("Password is too big."))
+                .Is(e => e.PasswordConfirmation != e.Password, async () => await Bus.InvokeDomainNotificationAsync("Invalid password confirmation."));
 
             if (!IsValidOperation())
             {
@@ -389,15 +383,15 @@ namespace Kozachok.Domain.Handlers.Commands
 
             if (userForgetPasswordCode == null)
             {
-                await bus.InvokeDomainNotificationAsync("Forget Password Code is Invalid.");
+                await Bus.InvokeDomainNotificationAsync("Forget Password Code is Invalid.");
                 return Unit.Value;
             }
 
             var currentUser = await userRepository.GetAsync(userForgetPasswordCode.UserId);
 
-            if (currentUser == null || (currentUser != null && currentUser.Id == Guid.Empty))
+            if (currentUser == null || currentUser.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("Cannot Change Password for that User.");
+                await Bus.InvokeDomainNotificationAsync("Cannot Change Password for that User.");
                 return Unit.Value;
             }
 
@@ -413,7 +407,7 @@ namespace Kozachok.Domain.Handlers.Commands
             }
 
             Commit();
-            await bus.InvokeAsync(new ForgetPasswordEvent(currentUser.Id, currentUser.Name, currentUser.Email, userForgetPasswordCode.ConfirmationCode));
+            await Bus.InvokeAsync(new ForgetPasswordEvent(currentUser.Id, currentUser.Name, currentUser.Email, userForgetPasswordCode.ConfirmationCode));
 
             return Unit.Value;
         }
@@ -422,24 +416,24 @@ namespace Kozachok.Domain.Handlers.Commands
         {
             if (IsUserAuthorized(user) == false)
             {
-                await bus.InvokeDomainNotificationAsync("User is not authorized.");
+                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return null;
             }
 
             var currentUser = await userRepository.GetAsync(user.Id.Value);
 
-            if (currentUser == null || (currentUser != null && currentUser.Id == Guid.Empty))
+            if (currentUser == null || currentUser.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("User is not Authorized.");
+                await Bus.InvokeDomainNotificationAsync("User is not Authorized.");
                 return null;
             }
 
             request
-                .IsNullEmptyOrWhitespace(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Please, provide E-mail."))
-                .IsInvalidEmail(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("Invalid E-mail."))
-                .IsMatchMaxLength(e => e.Email, async () => await bus.InvokeDomainNotificationAsync("E-mail is too big."))
-                .Is(e => userRepository.AnyAsync(u => u.Email == e.Email).Result, async () => await bus.InvokeDomainNotificationAsync("E-mail already exists."))
-                .Is(e => e.Email == user.Email, async () => await bus.InvokeDomainNotificationAsync("Please, provide new e-mail."));
+                .IsNullEmptyOrWhitespace(e => e.Email, async () => await Bus.InvokeDomainNotificationAsync("Please, provide E-mail."))
+                .IsInvalidEmail(e => e.Email, async () => await Bus.InvokeDomainNotificationAsync("Invalid E-mail."))
+                .IsMatchMaxLength(e => e.Email, async () => await Bus.InvokeDomainNotificationAsync("E-mail is too big."))
+                .Is(e => userRepository.AnyAsync(u => u.Email == e.Email).Result, async () => await Bus.InvokeDomainNotificationAsync("E-mail already exists."))
+                .Is(e => e.Email == user.Email, async () => await Bus.InvokeDomainNotificationAsync("Please, provide new e-mail."));
 
             if (!IsValidOperation())
             {
@@ -448,15 +442,15 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var previousCode = await userConfirmationCodeRepository
                 .Query(ucc => ucc.UserId == currentUser.Id && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.ChangeEmail)
-                .OrderByDescending(ucc => ucc.CreatedDateUTC)
-                .FirstOrDefaultAsync();
+                .OrderByDescending(ucc => ucc.CreatedDateUtc)
+                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
             byte attemptNum = 1;
             if (previousCode != null && previousCode.Id != Guid.Empty)
             {
                 if (previousCode.NextAttemptDate > DateTime.UtcNow)
                 {
-                    await bus.InvokeDomainNotificationAsync($"Please, wait {(previousCode.NextAttemptDate - DateTime.UtcNow)}.");
+                    await Bus.InvokeDomainNotificationAsync($"Please, wait {(previousCode.NextAttemptDate - DateTime.UtcNow)}.");
                     return null;
                 }
 
@@ -469,24 +463,18 @@ namespace Kozachok.Domain.Handlers.Commands
                 }
             }
 
-            DateTime nextAttemptDate = DateTime.UtcNow;
-            if (attemptNum < 3)
-            {
-                nextAttemptDate = nextAttemptDate.AddMinutes(5);
-            }
-            else
-            {
-                nextAttemptDate = nextAttemptDate.AddDays(1);
-            }
+            var nextAttemptDate = DateTime.UtcNow;
+
+            nextAttemptDate = attemptNum < 3 ? nextAttemptDate.AddMinutes(5) : nextAttemptDate.AddDays(1);
 
             var changeEmailCodeStr = Guid.NewGuid().ToString().Replace("-", "") + currentUser.Id.ToString().Replace("-", "");
 
-            var userChangeEmailCode = new UserConfirmationCode(currentUser.Id, changeEmailCodeStr, Shared.DTO.Enums.ConfirmationCodeType.ChangeEmail, attemptNum, nextAttemptDate);
+            var userChangeEmailCode = UserConfirmationCode.Create(currentUser.Id, changeEmailCodeStr, Shared.DTO.Enums.ConfirmationCodeType.ChangeEmail, attemptNum, nextAttemptDate);
             userChangeEmailCode.SetAdditionalData(request.Email);
             await userConfirmationCodeRepository.AddAsync(userChangeEmailCode);
 
             Commit();
-            await bus.InvokeAsync(new SendChangeEmailConfirmationEvent(currentUser.Id, currentUser.Name, request.Email, userChangeEmailCode.ConfirmationCode)).ConfigureAwait(false);
+            await Bus.InvokeAsync(new SendChangeEmailConfirmationEvent(currentUser.Id, currentUser.Name, request.Email, userChangeEmailCode.ConfirmationCode)).ConfigureAwait(false);
 
             return new EmailTimer() { AttemtNumber = attemptNum, NextAttemptDate = nextAttemptDate };
         }
@@ -494,7 +482,7 @@ namespace Kozachok.Domain.Handlers.Commands
         public async Task<Unit> Handle(ActivateNewEmailCommand request, CancellationToken cancellationToken)
         {
             request
-                .IsNullEmptyOrWhitespace(e => e.ChangeEmailCode, async () => await bus.InvokeDomainNotificationAsync("Please, provide Forget Password Code."));
+                .IsNullEmptyOrWhitespace(e => e.ChangeEmailCode, async () => await Bus.InvokeDomainNotificationAsync("Please, provide Forget Password Code."));
 
             if (!IsValidOperation())
             {
@@ -503,17 +491,17 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var userChangeEmailCode = await userConfirmationCodeRepository.FirstOrDefaultAsync(ucc => ucc.ConfirmationCode == request.ChangeEmailCode && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.ChangeEmail);
 
-            if (userChangeEmailCode == null || (userChangeEmailCode != null && userChangeEmailCode.Id == Guid.Empty))
+            if (userChangeEmailCode == null || userChangeEmailCode.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("Change Email Code is Invalid.");
+                await Bus.InvokeDomainNotificationAsync("Change Email Code is Invalid.");
                 return Unit.Value;
             }
 
             var currentUser = await userRepository.GetAsync(userChangeEmailCode.UserId);
 
-            if (currentUser == null || (currentUser != null && currentUser.Id == Guid.Empty))
+            if (currentUser == null || currentUser.Id == Guid.Empty)
             {
-                await bus.InvokeDomainNotificationAsync("Cannot Change Password for that User.");
+                await Bus.InvokeDomainNotificationAsync("Cannot Change Password for that User.");
                 return Unit.Value;
             }
 

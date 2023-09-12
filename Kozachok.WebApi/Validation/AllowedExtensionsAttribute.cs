@@ -4,11 +4,11 @@ namespace Kozachok.WebApi.Validation
 {
     public class AllowedExtensionsAttribute : ValidationAttribute
     {
-        private readonly string[] _extensions;
+        private readonly string[] extensions;
 
         public AllowedExtensionsAttribute(string[] extensions)
         {
-            _extensions = extensions;
+            this.extensions = extensions;
         }
 
         protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
@@ -17,7 +17,7 @@ namespace Kozachok.WebApi.Validation
             if (file != null)
             {
                 var extension = Path.GetExtension(file.FileName);
-                if (!_extensions.Contains(extension.ToLower()))
+                if (!extensions.Contains(extension.ToLower()))
                 {
                     return new ValidationResult(GetErrorMessage());
                 }

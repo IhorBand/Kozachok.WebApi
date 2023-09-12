@@ -3,6 +3,6 @@
     public class User
     {
         public string? Name { get; set; }
-        public DateTime CreatedDateUTC { get; set; }
+        public DateTime CreatedDateUtc { get; set; }
     }
 }

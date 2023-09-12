@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Kozachok.Shared.DTO.Common;
+using Kozachok.Shared.DTO.Models.DbEntities;
 using Kozachok.WebApi.Models.Common;
 
 namespace Kozachok.WebApi.Infrastructure.MappingProfiles
@@ -12,12 +13,14 @@ namespace Kozachok.WebApi.Infrastructure.MappingProfiles
                 .ForMember(dest => dest.Message, opt => opt.MapFrom(src => src.Message))
                 .ForMember(dest => dest.DateTime, opt => opt.MapFrom(src => src.DateTime));
 
-            CreateTwoWayMap<Shared.DTO.Models.DbEntities.Movie, Models.Movie.Movie>();
-            CreateTwoWayMap<PagedResult<Shared.DTO.Models.DbEntities.Movie>, PagedResult<Models.Movie.Movie>>();
+            CreateTwoWayMap<Movie, Models.Movie.Movie>();
+            CreateTwoWayMap<PagedResult<Movie>, PagedResult<Models.Movie.Movie>>();
 
             CreateTwoWayMap<Shared.DTO.Models.DbEntities.File, Models.File.File>();
-            CreateTwoWayMap<Shared.DTO.Models.DbEntities.User, Models.User.User>();
+            CreateTwoWayMap<User, Models.User.User>();
             CreateTwoWayMap<Shared.DTO.Models.Result.User.UserDetails, Models.User.UserDetails>();
+
+            CreateMap(typeof(PagedResult<>), typeof(PagedResult<>));
         }
 
         public void CreateTwoWayMap<T1, T2>()

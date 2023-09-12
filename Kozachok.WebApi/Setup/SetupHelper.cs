@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using AutoMapper;
+using System.Reflection;
+using Kozachok.WebApi.Infrastructure.MappingProfiles;
 
 namespace Kozachok.WebApi.Setup
 {
@@ -47,5 +49,14 @@ namespace Kozachok.WebApi.Setup
                         || (baseType.IsAssignableFrom(type) && !type.IsAbstract) // -> Non generics, ex: Repository
                     )
                 .ToList();
+
+        public static void PetiaZhuvyi(this IMapperConfigurationExpression configuration)
+        {
+            var profiles = typeof(DomainProfile).Assembly.GetTypes().Where(x => typeof(Profile).IsAssignableFrom(x));
+            foreach (var profile in profiles)
+            {
+                configuration.AddProfile(Activator.CreateInstance(profile) as Profile);
+            }
+        }
     }
 }

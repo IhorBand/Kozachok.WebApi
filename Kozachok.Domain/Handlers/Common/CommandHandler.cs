@@ -12,12 +12,12 @@ namespace Kozachok.Domain.Handlers.Common
     {
         private readonly IUnitOfWork uow;
         private readonly DomainNotificationHandler notifications;
-        protected readonly IMediatorHandler bus;
+        protected readonly IMediatorHandler Bus;
 
         public CommandHandler(IUnitOfWork uow, IMediatorHandler bus, INotificationHandler<DomainNotification> notifications)
         {
             this.uow = uow;
-            this.bus = bus;
+            this.Bus = bus;
             this.notifications = (DomainNotificationHandler)notifications;
         }
 
@@ -25,11 +25,8 @@ namespace Kozachok.Domain.Handlers.Common
 
         protected bool IsUserAuthorized(IUser user)
         {
-            if (user == null
-                || (user != null && user.Id == null)
-                || (user != null && user.Id != null && user.Id == Guid.Empty))
-                return false;
-            return true;
+            return user?.Id != null
+                   && (user.Id == null || user.Id != Guid.Empty);
         }
 
         public void Commit()

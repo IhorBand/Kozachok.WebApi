@@ -7,7 +7,6 @@ using Kozachok.WebApi.Controllers.Common;
 using Kozachok.WebApi.Validation;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 
 namespace Kozachok.WebApi.Controllers
 {
@@ -26,10 +25,10 @@ namespace Kozachok.WebApi.Controllers
         [RequestSizeLimit(2097152)] // Allow to upload only 2MB
         [RequestFormLimits(MultipartBodyLengthLimit = 2097152, ValueLengthLimit = 2097152)]
         public async Task<IActionResult> UpdateUserThumbnailImage(
-            [AllowedExtensions(new string[] { ".jpg", ".png", ".gif", ".jpeg", ".bmp", ".svg" })] 
+            [AllowedExtensions(new [] { ".jpg", ".png", ".gif", ".jpeg", ".bmp", ".svg" })] 
             IFormFile file)
         {
-            var result = await bus.RequestAsync(new UpdateUserThumbnailImageCommand() { File = file });
+            var result = await Bus.RequestAsync(new UpdateUserThumbnailImageCommand() { File = file });
             return Response<Models.File.File>(result);
         }
     }
