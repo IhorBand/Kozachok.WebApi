@@ -30,13 +30,14 @@ namespace Kozachok.WebApi.Controllers.Common
 
         protected new IActionResult Response<T>(object? result)
         {
-            if(result != null)
+            if (result == null)
             {
-                var model = Mapper.Map<T>(result);
-                return Response(model);
+                return Response();
             }
 
-            return Response();
+            var model = Mapper.Map<T>(result);
+            return Response(model);
+
         }
 
         protected new IActionResult Response(object? result = null)

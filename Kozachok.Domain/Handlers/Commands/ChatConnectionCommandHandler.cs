@@ -59,7 +59,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 .IsInvalidGuid(e => e.RoomId, async () => await Bus.InvokeDomainNotificationAsync("RoomId is invalid."))
                 .IsInvalidGuid(e => e.UserId, async () => await Bus.InvokeDomainNotificationAsync("UserId is invalid."));
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value);
+            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -72,7 +72,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var room = await roomRepository.GetAsync(request.RoomId);
+            var room = await roomRepository.GetAsync(request.RoomId, cancellationToken);
 
             if (room == null || room.Id == Guid.Empty)
             {
@@ -80,7 +80,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var roomUser = await roomUserRepository.FirstOrDefaultAsync(ru => ru.UserId == user.Id && ru.RoomId == request.RoomId);
+            var roomUser = await roomUserRepository.FirstOrDefaultAsync(ru => ru.UserId == user.Id && ru.RoomId == request.RoomId, cancellationToken);
 
             if (roomUser == null || roomUser.Id == Guid.Empty)
             {
@@ -88,17 +88,17 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var connection = await chatConnectionRepository.FirstOrDefaultAsync(cc => cc.UserId == request.UserId && cc.RoomId == request.RoomId);
+            var connection = await chatConnectionRepository.FirstOrDefaultAsync(cc => cc.UserId == request.UserId && cc.RoomId == request.RoomId, cancellationToken);
 
             if (connection != null && connection.Id != Guid.Empty)
             {
-                await chatConnectionRepository.DeleteAsync(connection.Id);
+                await chatConnectionRepository.DeleteAsync(connection.Id, cancellationToken);
                 Commit();
             }
 
             var newConnection = ChatConnection.Create(request.UserId, request.RoomId, request.ConnectionId);
 
-            await chatConnectionRepository.AddAsync(newConnection);
+            await chatConnectionRepository.AddAsync(newConnection, cancellationToken);
             Commit();
 
             return Unit.Value;

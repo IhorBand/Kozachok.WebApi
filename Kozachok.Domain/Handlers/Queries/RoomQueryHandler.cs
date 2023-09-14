@@ -68,7 +68,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 return null;
             }
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value);
+            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -76,7 +76,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 return null;
             }
 
-            var room = await roomRepository.GetAsync(request.RoomId);
+            var room = await roomRepository.GetAsync(request.RoomId, cancellationToken);
 
             if (room == null || room.Id == Guid.Empty)
             {
@@ -90,7 +90,7 @@ namespace Kozachok.Domain.Handlers.Queries
             }
 
             var userInRoom =
-                await roomUserRepository.FirstOrDefaultAsync(e => e.UserId == user.Id.Value && e.RoomId == room.Id);
+                await roomUserRepository.FirstOrDefaultAsync(e => e.UserId == user.Id.Value && e.RoomId == room.Id, cancellationToken);
 
             if (userInRoom != null && userInRoom.Id != Guid.Empty)
                 return mapper.Map<RoomDto>(room);
@@ -107,7 +107,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 return null;
             }
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value);
+            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -128,7 +128,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 itemsPerPage = request.ItemsPerPage.Value;
             }
 
-            IQueryable<Room> query =
+            var query =
                 roomRepository.Query().Where(e => e.RoomTypeId == Shared.DTO.Enums.RoomType.Public);
 
             if (!string.IsNullOrWhiteSpace(request.Name))
@@ -137,7 +137,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 query = query.Where(e => e.Name.ToLower().Contains(lowerName));
             }
 
-            var result = roomRepository.Page(query, currentPage, itemsPerPage);
+            var result = await roomRepository.PageAsync(query, currentPage, itemsPerPage, cancellationToken);
 
             return mapper.Map<PagedResult<RoomDto>>(result);
         }
@@ -150,7 +150,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 return null;
             }
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value);
+            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -179,7 +179,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 query = query.Where(e => e.Name.ToLower().Contains(lowerName));
             }
 
-            var result = roomRepository.Page(query, currentPage, itemsPerPage);
+            var result = await roomRepository.PageAsync(query, currentPage, itemsPerPage, cancellationToken);
 
             return mapper.Map<PagedResult<RoomDto>>(result);
         }
@@ -192,7 +192,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 return null;
             }
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value);
+            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -226,7 +226,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 query = query.Where(e => e.Name.ToLower().Contains(lowerName));
             }
 
-            var result = roomRepository.Page(query, currentPage, itemsPerPage);
+            var result = await roomRepository.PageAsync(query, currentPage, itemsPerPage, cancellationToken);
             
             return mapper.Map<PagedResult<RoomDto>>(result);
         }
@@ -248,7 +248,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 return null;
             }
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value);
+            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -256,7 +256,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 return null;
             }
 
-            var room = await roomRepository.GetAsync(request.RoomId);
+            var room = await roomRepository.GetAsync(request.RoomId, cancellationToken);
 
             if (room == null || room.Id == Guid.Empty)
             {
@@ -265,7 +265,7 @@ namespace Kozachok.Domain.Handlers.Queries
             }
 
             var userInRoom =
-                await roomUserRepository.FirstOrDefaultAsync(e => e.UserId == user.Id.Value && e.RoomId == room.Id);
+                await roomUserRepository.FirstOrDefaultAsync(e => e.UserId == user.Id.Value && e.RoomId == room.Id, cancellationToken);
 
             if (room.RoomTypeId != Shared.DTO.Enums.RoomType.Public
                 && (userInRoom == null || userInRoom.Id == Guid.Empty))

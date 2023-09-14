@@ -66,7 +66,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 .IsMatchMaxLength(e => e.Password, async () => await Bus.InvokeDomainNotificationAsync("Password is too big."))
                 .IsMatchMaxLength(e => e.PasswordConfirmation, async () => await Bus.InvokeDomainNotificationAsync("Password Confirmation is too big."))
                 .Is(e => e.PasswordConfirmation != e.Password, async () => await Bus.InvokeDomainNotificationAsync("Invalid password confirmation."))
-                .Is(e => userRepository.AnyAsync(u => u.Email == request.Email).Result, async () => await Bus.InvokeDomainNotificationAsync("E-mail already exists."));
+                .Is(e => userRepository.AnyAsync(u => u.Email == request.Email, cancellationToken).Result, async () => await Bus.InvokeDomainNotificationAsync("E-mail already exists."));
 
             if (!IsValidOperation())
             {
@@ -75,14 +75,14 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var entity = User.Create(request.Name, request.Email, request.Password, false);
 
-            await userRepository.AddAsync(entity);
+            await userRepository.AddAsync(entity, cancellationToken);
 
             var confirmationCodeStr = entity.Id.ToString().Replace("-", "") + Guid.NewGuid().ToString().Replace("-", "");
 
             var nextAttemptDate = DateTime.UtcNow.AddMinutes(5);
 
             var userConfirmationCode = UserConfirmationCode.Create(entity.Id, confirmationCodeStr, Shared.DTO.Enums.ConfirmationCodeType.EmailConfirmation, 1, nextAttemptDate);
-            await userConfirmationCodeRepository.AddAsync(userConfirmationCode);
+            await userConfirmationCodeRepository.AddAsync(userConfirmationCode, cancellationToken);
 
             Commit();
 
@@ -99,7 +99,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var original = await userRepository.GetAsync(user.Id.Value);
+            var original = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (original == null || original.Id == Guid.Empty)
             {
@@ -118,7 +118,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
             original.UpdateInfo(request.Name);
 
-            await userRepository.UpdateAsync(original);
+            userRepository.Update(original);
 
             Commit();
             await Bus.InvokeAsync(new UpdateUserEvent(original.Id, original.Name, original.Email));
@@ -134,7 +134,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var original = await userRepository.GetAsync(user.Id.Value);
+            var original = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (original == null || original.Id == Guid.Empty)
             {
@@ -156,7 +156,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
             original.ChangePassword(request.Password);
 
-            await userRepository.UpdateAsync(original);
+            userRepository.Update(original);
 
             Commit();
             await Bus.InvokeAsync(new ChangeUserPasswordEvent(original.Id, original.Password));
@@ -172,7 +172,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var original = await userRepository.GetAsync(user.Id.Value);
+            var original = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (original == null || original.Id == Guid.Empty)
             {
@@ -180,7 +180,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            await userRepository.DeleteAsync(user.Id.Value);
+            await userRepository.DeleteAsync(user.Id.Value, cancellationToken);
 
             Commit();
             await Bus.InvokeAsync(new DeleteUserEvent(user.Id.Value));
@@ -200,7 +200,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return null;
             }
 
-            var currentUser = await userRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
+            var currentUser = await userRepository.FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -217,7 +217,7 @@ namespace Kozachok.Domain.Handlers.Commands
             var previousConfirmationCode = await userConfirmationCodeRepository
                 .Query(ucc => ucc.UserId == currentUser.Id && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.EmailConfirmation)
                 .OrderByDescending(ucc => ucc.CreatedDateUtc)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
 
             byte attemptNum = 1;
             if(previousConfirmationCode != null && previousConfirmationCode.Id != Guid.Empty)
@@ -237,7 +237,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 }
             }
 
-            DateTime nextAttemptDate = DateTime.UtcNow;
+            var nextAttemptDate = DateTime.UtcNow;
             if (attemptNum < 3)
             {
                 nextAttemptDate = nextAttemptDate.AddMinutes(5);
@@ -250,7 +250,7 @@ namespace Kozachok.Domain.Handlers.Commands
             var confirmationCodeStr = Guid.NewGuid().ToString().Replace("-", "") + currentUser.Id.ToString().Replace("-", "");
 
             var userConfirmationCode = UserConfirmationCode.Create(currentUser.Id, confirmationCodeStr, Shared.DTO.Enums.ConfirmationCodeType.EmailConfirmation, attemptNum, nextAttemptDate);
-            await userConfirmationCodeRepository.AddAsync(userConfirmationCode);
+            await userConfirmationCodeRepository.AddAsync(userConfirmationCode, cancellationToken);
 
             Commit();
             await Bus.InvokeAsync(new ResendActivationCodeEvent(currentUser.Id, currentUser.Name, currentUser.Email, userConfirmationCode.ConfirmationCode)).ConfigureAwait(false);
@@ -268,7 +268,9 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var userConfirmationCode = await userConfirmationCodeRepository.FirstOrDefaultAsync(ucc => ucc.ConfirmationCode == request.ConfirmationCode && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.EmailConfirmation);
+            var userConfirmationCode = await userConfirmationCodeRepository
+                .FirstOrDefaultAsync(ucc => ucc.ConfirmationCode == request.ConfirmationCode 
+                                            && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.EmailConfirmation, cancellationToken);
             
             if (userConfirmationCode == null)
             {
@@ -276,7 +278,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var currentUser = await userRepository.GetAsync(userConfirmationCode.UserId);
+            var currentUser = await userRepository.GetAsync(userConfirmationCode.UserId, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -292,13 +294,16 @@ namespace Kozachok.Domain.Handlers.Commands
 
             currentUser.Activate();
 
-            await userRepository.UpdateAsync(currentUser);
+            userRepository.Update(currentUser);
 
-            var oldUserConfirmationCodes = await userConfirmationCodeRepository.Query(ucc => ucc.UserId == currentUser.Id && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.EmailConfirmation).ToListAsync();
+            var oldUserConfirmationCodes = await userConfirmationCodeRepository
+                .Query(ucc => ucc.UserId == currentUser.Id 
+                              && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.EmailConfirmation)
+                .ToListAsync(cancellationToken);
 
             foreach (var oldUserConfirmationCode in oldUserConfirmationCodes)
             {
-                await userConfirmationCodeRepository.DeleteAsync(oldUserConfirmationCode.Id);
+                await userConfirmationCodeRepository.DeleteAsync(oldUserConfirmationCode.Id, cancellationToken);
             }
 
             Commit();
@@ -319,7 +324,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return null;
             }
 
-            var currentUser = await userRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
+            var currentUser = await userRepository.FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -330,7 +335,7 @@ namespace Kozachok.Domain.Handlers.Commands
             var previousCode = await userConfirmationCodeRepository
                 .Query(ucc => ucc.UserId == currentUser.Id && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.ForgotPassword)
                 .OrderByDescending(ucc => ucc.CreatedDateUtc)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
 
             byte attemptNum = 1;
             if (previousCode != null && previousCode.Id != Guid.Empty)
@@ -358,7 +363,7 @@ namespace Kozachok.Domain.Handlers.Commands
             var forgetPasswordCodeStr = Guid.NewGuid().ToString().Replace("-", "") + currentUser.Id.ToString().Replace("-", "");
 
             var userForgetPasswordCode = UserConfirmationCode.Create(currentUser.Id, forgetPasswordCodeStr, Shared.DTO.Enums.ConfirmationCodeType.ForgotPassword, attemptNum, nextAttemptDate);
-            await userConfirmationCodeRepository.AddAsync(userForgetPasswordCode);
+            await userConfirmationCodeRepository.AddAsync(userForgetPasswordCode, cancellationToken);
 
             Commit();
             await Bus.InvokeAsync(new SendForgetPasswordEmailEvent(currentUser.Id, currentUser.Name, currentUser.Email, userForgetPasswordCode.ConfirmationCode)).ConfigureAwait(false);
@@ -379,7 +384,9 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var userForgetPasswordCode = await userConfirmationCodeRepository.FirstOrDefaultAsync(ucc => ucc.ConfirmationCode == request.ForgetPasswordCode && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.ForgotPassword);
+            var userForgetPasswordCode = await userConfirmationCodeRepository
+                .FirstOrDefaultAsync(ucc => ucc.ConfirmationCode == request.ForgetPasswordCode 
+                                            && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.ForgotPassword, cancellationToken);
 
             if (userForgetPasswordCode == null)
             {
@@ -387,7 +394,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var currentUser = await userRepository.GetAsync(userForgetPasswordCode.UserId);
+            var currentUser = await userRepository.GetAsync(userForgetPasswordCode.UserId, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -397,13 +404,16 @@ namespace Kozachok.Domain.Handlers.Commands
 
             currentUser.ChangePassword(request.Password);
 
-            await userRepository.UpdateAsync(currentUser);
+            userRepository.Update(currentUser);
 
-            var oldUserConfirmationCodes = await userConfirmationCodeRepository.Query(ucc => ucc.UserId == currentUser.Id && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.ForgotPassword).ToListAsync();
+            var oldUserConfirmationCodes = await userConfirmationCodeRepository
+                .Query(ucc => ucc.UserId == currentUser.Id 
+                              && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.ForgotPassword)
+                .ToListAsync(cancellationToken);
 
             foreach (var oldUserConfirmationCode in oldUserConfirmationCodes)
             {
-                await userConfirmationCodeRepository.DeleteAsync(oldUserConfirmationCode.Id);
+                await userConfirmationCodeRepository.DeleteAsync(oldUserConfirmationCode.Id, cancellationToken);
             }
 
             Commit();
@@ -420,7 +430,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return null;
             }
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value);
+            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -432,7 +442,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 .IsNullEmptyOrWhitespace(e => e.Email, async () => await Bus.InvokeDomainNotificationAsync("Please, provide E-mail."))
                 .IsInvalidEmail(e => e.Email, async () => await Bus.InvokeDomainNotificationAsync("Invalid E-mail."))
                 .IsMatchMaxLength(e => e.Email, async () => await Bus.InvokeDomainNotificationAsync("E-mail is too big."))
-                .Is(e => userRepository.AnyAsync(u => u.Email == e.Email).Result, async () => await Bus.InvokeDomainNotificationAsync("E-mail already exists."))
+                .Is(e => userRepository.AnyAsync(u => u.Email == e.Email, cancellationToken).Result, async () => await Bus.InvokeDomainNotificationAsync("E-mail already exists."))
                 .Is(e => e.Email == user.Email, async () => await Bus.InvokeDomainNotificationAsync("Please, provide new e-mail."));
 
             if (!IsValidOperation())
@@ -443,7 +453,7 @@ namespace Kozachok.Domain.Handlers.Commands
             var previousCode = await userConfirmationCodeRepository
                 .Query(ucc => ucc.UserId == currentUser.Id && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.ChangeEmail)
                 .OrderByDescending(ucc => ucc.CreatedDateUtc)
-                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+                .FirstOrDefaultAsync(cancellationToken);
 
             byte attemptNum = 1;
             if (previousCode != null && previousCode.Id != Guid.Empty)
@@ -471,7 +481,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
             var userChangeEmailCode = UserConfirmationCode.Create(currentUser.Id, changeEmailCodeStr, Shared.DTO.Enums.ConfirmationCodeType.ChangeEmail, attemptNum, nextAttemptDate);
             userChangeEmailCode.SetAdditionalData(request.Email);
-            await userConfirmationCodeRepository.AddAsync(userChangeEmailCode);
+            await userConfirmationCodeRepository.AddAsync(userChangeEmailCode, cancellationToken);
 
             Commit();
             await Bus.InvokeAsync(new SendChangeEmailConfirmationEvent(currentUser.Id, currentUser.Name, request.Email, userChangeEmailCode.ConfirmationCode)).ConfigureAwait(false);
@@ -489,7 +499,9 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var userChangeEmailCode = await userConfirmationCodeRepository.FirstOrDefaultAsync(ucc => ucc.ConfirmationCode == request.ChangeEmailCode && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.ChangeEmail);
+            var userChangeEmailCode = await userConfirmationCodeRepository
+                .FirstOrDefaultAsync(ucc => ucc.ConfirmationCode == request.ChangeEmailCode 
+                                            && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.ChangeEmail, cancellationToken);
 
             if (userChangeEmailCode == null || userChangeEmailCode.Id == Guid.Empty)
             {
@@ -497,7 +509,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var currentUser = await userRepository.GetAsync(userChangeEmailCode.UserId);
+            var currentUser = await userRepository.GetAsync(userChangeEmailCode.UserId, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -507,13 +519,15 @@ namespace Kozachok.Domain.Handlers.Commands
 
             currentUser.ChangeEmail(userChangeEmailCode.AdditionalData);
 
-            await userRepository.UpdateAsync(currentUser);
+            userRepository.Update(currentUser);
 
-            var oldUserConfirmationCodes = await userConfirmationCodeRepository.Query(ucc => ucc.UserId == currentUser.Id && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.ChangeEmail).ToListAsync();
+            var oldUserConfirmationCodes = await userConfirmationCodeRepository
+                .Query(ucc => ucc.UserId == currentUser.Id && ucc.CodeType == Shared.DTO.Enums.ConfirmationCodeType.ChangeEmail)
+                .ToListAsync(cancellationToken);
 
             foreach (var oldUserConfirmationCode in oldUserConfirmationCodes)
             {
-                await userConfirmationCodeRepository.DeleteAsync(oldUserConfirmationCode.Id);
+                await userConfirmationCodeRepository.DeleteAsync(oldUserConfirmationCode.Id, cancellationToken);
             }
 
             Commit();

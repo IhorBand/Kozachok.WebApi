@@ -28,14 +28,14 @@ namespace Kozachok.WebApi.Services.Implementation
             this.jwtTokenConfiguration = jwtTokenConfiguration ?? throw new ArgumentNullException(nameof(jwtTokenConfiguration));
         }
 
-        public async Task<AuthorizeUserOutputModel?> GenerateToken(AuthorizeUserInputModel model)
+        public async Task<AuthorizeUserOutputModel?> GenerateToken(AuthorizeUserInputModel model, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(model.Email))
             {
                 return new AuthorizeUserOutputModel { IsAuthorized = false, IsActive = false, Message = "Please, provide valid Email!" };
             }
 
-            var user = await this.userRepository.FirstOrDefaultAsync(u => u.Email == model.Email);
+            var user = await userRepository.FirstOrDefaultAsync(u => u.Email == model.Email, cancellationToken);
 
             if (user != null)
             {
@@ -54,7 +54,7 @@ namespace Kozachok.WebApi.Services.Implementation
                         return null;
                     }
 
-                    var storedToken = cache.GetString(model.RefreshToken);
+                    var storedToken = await cache.GetStringAsync(model.RefreshToken, cancellationToken);
 
                     if (string.IsNullOrWhiteSpace(storedToken))
                     {
@@ -93,7 +93,7 @@ namespace Kozachok.WebApi.Services.Implementation
                 refreshTokenExpiredIn = now.AddSeconds(this.jwtTokenConfiguration.RefreshTokenExpiresIn);
             }
 
-            TimeSpan refreshTokenExpiresIn = refreshTokenExpiredIn - now;
+            var refreshTokenExpiresIn = refreshTokenExpiredIn - now;
 
             var identity = new ClaimsIdentity
             (
@@ -148,11 +148,12 @@ namespace Kozachok.WebApi.Services.Implementation
             var cacheOptions = new DistributedCacheEntryOptions();
             cacheOptions.SetAbsoluteExpiration(TimeSpan.FromSeconds(jwtTokenConfiguration.RefreshTokenExpiresIn));
 
-            cache.SetString
+            await cache.SetStringAsync
             (
                 result.RefreshToken,
                 JsonConvert.SerializeObject(new RefreshTokenData { RefreshToken = result.RefreshToken, Email = user.Email }),
-                cacheOptions
+                cacheOptions,
+                cancellationToken
             );
 
             return result;

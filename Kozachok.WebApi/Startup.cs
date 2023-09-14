@@ -94,8 +94,8 @@ namespace Kozachok.WebApi
                 });
             });
 
-            var connectionStrings =
-                this.Configuration.GetSection("ConnectionStrings").Get<ConnectionStringConfiguration>();
+            //var connectionStrings =
+            //    this.Configuration.GetSection("ConnectionStrings").Get<ConnectionStringConfiguration>();
             var jwtSettings =
                 this.Configuration.GetSection("Jwt").Get<JwtTokenConfiguration>();
 
@@ -139,17 +139,15 @@ namespace Kozachok.WebApi
                                 context.Token = context.Request.Query["access_token"];
                             }
                             return Task.CompletedTask;
-                        },
-                        OnAuthenticationFailed = context =>
-                        {
-                            Console.WriteLine("");
-                            return Task.CompletedTask;
-                        },
-                        OnTokenValidated = context =>
-                        {
-                            Console.WriteLine("");
-                            return Task.CompletedTask;
                         }
+                        //OnAuthenticationFailed = context =>
+                        //{
+                        //    return Task.CompletedTask;
+                        //},
+                        //OnTokenValidated = context =>
+                        //{
+                        //    return Task.CompletedTask;
+                        //}
                     };
                 });
 
@@ -274,7 +272,7 @@ namespace Kozachok.WebApi
             // AutoMapper Configuration
             var mapperConfig = new MapperConfiguration(mc =>
             {
-                mc.PetiaZhuvyi();
+                mc.ConfigureDomainMappingProfiles();
             });
 
             IMapper mapper = mapperConfig.CreateMapper();

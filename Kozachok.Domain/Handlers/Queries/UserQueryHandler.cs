@@ -46,14 +46,14 @@ namespace Kozachok.Domain.Handlers.Queries
 
         public async Task<ScriptProgress> Handle(GetScriptProgressQuery request, CancellationToken cancellationToken)
         {
-            var scriptProgress = await scriptProgressRepository.FirstOrDefaultAsync(q => true);
+            var scriptProgress = await scriptProgressRepository.FirstOrDefaultAsync(q => true, cancellationToken);
 
             return scriptProgress;
         }
 
         public async Task<UserDetails> Handle(GetUserDetailQuery request, CancellationToken cancellationToken)
         {
-            if(IsUserAuthorized(user) == false)
+            if (IsUserAuthorized(user) == false)
             {
                 await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return null;
@@ -67,7 +67,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 return null;
             }
 
-            var requestedUser = await userRepository.GetAsync(request.UserId);
+            var requestedUser = await userRepository.GetAsync(request.UserId, cancellationToken);
 
             if (requestedUser == null || (requestedUser.Id == Guid.Empty))
             {
@@ -80,13 +80,16 @@ namespace Kozachok.Domain.Handlers.Queries
                 User = requestedUser
             };
 
-            if (requestedUser.ThumbnailImageFileId != null && requestedUser.ThumbnailImageFileId.Value != Guid.Empty)
+            if (requestedUser.ThumbnailImageFileId == null ||
+                requestedUser.ThumbnailImageFileId.Value == Guid.Empty)
             {
-                var file = await fileRepository.GetAsync(requestedUser.ThumbnailImageFileId.Value);
-                if(file != null && file.Id != Guid.Empty)
-                {
-                    model.ThumbnailImageUrl = file.Url;
-                }
+                return model;
+            }
+
+            var file = await fileRepository.GetAsync(requestedUser.ThumbnailImageFileId.Value, cancellationToken);
+            if (file != null && file.Id != Guid.Empty)
+            {
+                model.ThumbnailImageUrl = file.Url;
             }
 
             return model;

@@ -13,6 +13,7 @@ namespace Kozachok.Shared.DTO.Models.DbEntities
         public virtual DateTime CreatedDateUtc { get; private set; }
 
         public virtual ICollection<RoomUser> RoomUsers { get; set; }
+        public virtual ICollection<PlaylistMovie> PlaylistMovies { get; set; }
 
         public static Room Create(
             string name,

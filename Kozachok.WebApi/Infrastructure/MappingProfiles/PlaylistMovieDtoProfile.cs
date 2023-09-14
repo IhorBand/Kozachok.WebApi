@@ -8,7 +8,15 @@ namespace Kozachok.WebApi.Infrastructure.MappingProfiles
     {
         public PlaylistMovieDtoProfile()
         {
-            CreateMap<PlaylistMovie, PlaylistMovieDto>();
+            CreateMap<PlaylistMovie, PlaylistMovieDto>()
+                .ForMember(dest => dest.Movie,
+                    opt => opt.MapFrom(
+                        src => src.Movie))
+                .ForMember(dest => dest.PlaylistMovieVideoDtOs,
+                    opt => opt.MapFrom(
+                        src => src.PlaylistMovieVideos));
+
+            ;
             CreateMap<PlaylistMovieDto, PlaylistMovie>();
         }
     }

@@ -57,7 +57,8 @@ namespace Kozachok.Domain.Handlers.Queries
                 request.GenreId ?? 0, 
                 request.CountryId ?? 0,
                 request.MovieOrderTypeId,
-                request.OrderDirection);
+                request.OrderDirection, 
+                cancellationToken);
             
             return mapper.Map<PagedResult<MovieDto>>(result);
         }

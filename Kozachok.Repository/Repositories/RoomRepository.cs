@@ -22,11 +22,12 @@ namespace Kozachok.Repository.Repositories
             this.mapper = mapper;
         }
 
-        public async Task<RoomFullInformationDto> GetRoomFullInformationDtoAsync(Guid roomId, CancellationToken ct = default)
+        public async Task<RoomFullInformationDto> GetRoomFullInformationDtoAsync(Guid roomId, CancellationToken cancellationToken = default)
         {
             var roomDataModel = await Query()
                 .Include(r => r.RoomUsers)
-                .FirstOrDefaultAsync(r => r.Id == roomId, ct);
+                .Include(r => r.PlaylistMovies)
+                .FirstOrDefaultAsync(r => r.Id == roomId, cancellationToken);
 
             if (roomDataModel == null)
             {
@@ -34,13 +35,14 @@ namespace Kozachok.Repository.Repositories
             }
 
             var usersInRoom = roomDataModel.RoomUsers.Select(ru => ru.User).ToList();
-            var userAdmin = roomDataModel.RoomUsers.Select(ru => ru.User).First(u => u.Id == roomDataModel.OwnerUserId);
+            var userAdmin = roomDataModel.RoomUsers.Where(ru => ru.IsOwner).Select(ru => ru.User).First();
 
             return new RoomFullInformationDto
             {
                 Room = mapper.Map<RoomDto>(roomDataModel),
                 UsersInRoom = mapper.Map<List<UserInformationDto>>(usersInRoom),
-                UserAdmin = mapper.Map<UserInformationDto>(userAdmin)
+                UserAdmin = mapper.Map<UserInformationDto>(userAdmin),
+                PlaylistMovies = mapper.Map<List<PlaylistMovieDto>>(roomDataModel.PlaylistMovies)
             };
         }
     }

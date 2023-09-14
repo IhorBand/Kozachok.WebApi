@@ -4,6 +4,6 @@ namespace Kozachok.WebApi.Services.Abstractions
 {
     public interface ITokenService
     {
-        public Task<AuthorizeUserOutputModel?> GenerateToken(AuthorizeUserInputModel model);
+        public Task<AuthorizeUserOutputModel?> GenerateToken(AuthorizeUserInputModel model, CancellationToken cancellationToken = default);
     }
 }
