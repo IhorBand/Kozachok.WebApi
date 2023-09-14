@@ -7,7 +7,6 @@ namespace Kozachok.Shared.DTO.Models.DbEntities
 {
     public class ScriptProgress : Entity
     {
-        // -> Empty contructor for EF
         public ScriptProgress()
         {
 

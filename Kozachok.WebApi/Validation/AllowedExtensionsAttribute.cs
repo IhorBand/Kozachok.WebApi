@@ -13,21 +13,16 @@ namespace Kozachok.WebApi.Validation
 
         protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
         {
-            var file = value as IFormFile;
-            if (file != null)
-            {
-                var extension = Path.GetExtension(file.FileName);
-                if (!extensions.Contains(extension.ToLower()))
-                {
-                    return new ValidationResult(GetErrorMessage());
-                }
-            }
-            return ValidationResult.Success;
+            if (value is not IFormFile file) return ValidationResult.Success;
+
+            var extension = Path.GetExtension(file.FileName);
+
+            return !extensions.Contains(extension.ToLower()) ? new ValidationResult(GetErrorMessage()) : ValidationResult.Success;
         }
 
         private string GetErrorMessage()
         {
-            return $"Your image's filetype is not valid.";
+            return $"Your image's file type is not valid.";
         }
     }
 }

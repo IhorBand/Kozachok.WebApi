@@ -65,7 +65,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 .IsNullEmptyOrWhitespace(e => e.Name, async () => await Bus.InvokeDomainNotificationAsync("Invalid name."))
                 .IsMatchMaxLength(e => e.Name, async () => await Bus.InvokeDomainNotificationAsync("Name is too big."));
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value);
+            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if(currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -79,10 +79,10 @@ namespace Kozachok.Domain.Handlers.Commands
             }
 
             var room = Room.Create(request.Name, request.RoomType, currentUser.Id);
-            await roomRepository.AddAsync(room);
+            await roomRepository.AddAsync(room, cancellationToken);
 
             var roomUser = RoomUser.Create(user.Id.Value, room.Id, true);
-            await roomUserRepository.AddAsync(roomUser);
+            await roomUserRepository.AddAsync(roomUser, cancellationToken);
 
             Commit();
 
@@ -102,7 +102,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 .IsNullEmptyOrWhitespace(e => e.Name, async () => await Bus.InvokeDomainNotificationAsync("Invalid name."))
                 .IsMatchMaxLength(e => e.Name, async () => await Bus.InvokeDomainNotificationAsync("Name is too big."));
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value);
+            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -115,7 +115,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var room = await roomRepository.GetAsync(request.RoomId);
+            var room = await roomRepository.GetAsync(request.RoomId, cancellationToken);
 
             if (room == null || room.Id == Guid.Empty)
             {
@@ -132,7 +132,7 @@ namespace Kozachok.Domain.Handlers.Commands
             room.Name = request.Name;
             room.RoomTypeId = request.RoomType;
 
-            await roomRepository.UpdateAsync(room);
+            roomRepository.Update(room);
 
             Commit();
 
@@ -150,7 +150,7 @@ namespace Kozachok.Domain.Handlers.Commands
             request
                 .IsInvalidGuid(e => e.RoomId, async () => await Bus.InvokeDomainNotificationAsync("Invalid Room Id."));
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value);
+            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -163,7 +163,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var room = await roomRepository.GetAsync(request.RoomId);
+            var room = await roomRepository.GetAsync(request.RoomId, cancellationToken);
 
             if (room == null || room.Id == Guid.Empty)
             {
@@ -171,7 +171,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var userRoomArr = await roomUserRepository.Query(e => e.RoomId == room.Id).ToListAsync();
+            var userRoomArr = await roomUserRepository.Query(e => e.RoomId == room.Id).ToListAsync(cancellationToken);
 
             if (room.OwnerUserId != currentUser.Id)
             {
@@ -183,13 +183,13 @@ namespace Kozachok.Domain.Handlers.Commands
             {
                 foreach(var userRoom in userRoomArr)
                 {
-                    await roomUserRepository.DeleteAsync(userRoom.Id);
+                    await roomUserRepository.DeleteAsync(userRoom.Id, cancellationToken);
                 }
 
                 Commit();
             }
 
-            await roomRepository.DeleteAsync(room.Id);
+            await roomRepository.DeleteAsync(room.Id, cancellationToken);
 
             Commit();
 
@@ -207,7 +207,7 @@ namespace Kozachok.Domain.Handlers.Commands
             request
                 .IsInvalidGuid(e => e.RoomId, async () => await Bus.InvokeDomainNotificationAsync("Invalid Room Id"));
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value);
+            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -220,7 +220,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var room = await roomRepository.GetAsync(request.RoomId);
+            var room = await roomRepository.GetAsync(request.RoomId, cancellationToken);
 
             if (room == null || room.Id == Guid.Empty)
             {
@@ -228,7 +228,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var isUserAlreadyJoinedRoom = await roomUserRepository.AnyAsync(e => e.RoomId == room.Id && e.UserId == currentUser.Id);
+            var isUserAlreadyJoinedRoom = await roomUserRepository.AnyAsync(e => e.RoomId == room.Id && e.UserId == currentUser.Id, cancellationToken);
 
             if (isUserAlreadyJoinedRoom)
             {
@@ -237,7 +237,7 @@ namespace Kozachok.Domain.Handlers.Commands
             }
 
             var roomUser = RoomUser.Create(user.Id.Value, room.Id, false);
-            await roomUserRepository.AddAsync(roomUser);
+            await roomUserRepository.AddAsync(roomUser, cancellationToken);
 
             Commit();
 
@@ -255,7 +255,7 @@ namespace Kozachok.Domain.Handlers.Commands
             request
                 .IsInvalidGuid(e => e.RoomId, async () => await Bus.InvokeDomainNotificationAsync("Invalid Room Id"));
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value);
+            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -268,7 +268,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var room = await roomRepository.GetAsync(request.RoomId);
+            var room = await roomRepository.GetAsync(request.RoomId, cancellationToken);
 
             if (room == null || room.Id == Guid.Empty)
             {
@@ -282,7 +282,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var roomUser = await roomUserRepository.FirstOrDefaultAsync(e => e.RoomId == room.Id && e.UserId == currentUser.Id);
+            var roomUser = await roomUserRepository.FirstOrDefaultAsync(e => e.RoomId == room.Id && e.UserId == currentUser.Id, cancellationToken);
 
             if (roomUser == null || roomUser.Id == Guid.Empty)
             {
@@ -290,7 +290,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            await roomUserRepository.DeleteAsync(roomUser.Id);
+            await roomUserRepository.DeleteAsync(roomUser.Id, cancellationToken);
 
             Commit();
 

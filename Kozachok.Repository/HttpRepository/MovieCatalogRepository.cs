@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Kozachok.Repository.HttpRepository
@@ -19,7 +20,7 @@ namespace Kozachok.Repository.HttpRepository
             MovieCatalogEndpoints = movieCatalogEndpoints;
         }
 
-        public async Task<List<Translator>> GetTranslatorsAsync(string videoUrlId)
+        public async Task<List<Translator>> GetTranslatorsAsync(string videoUrlId, CancellationToken cancellationToken = default)
         {
             var url = MovieCatalogEndpoints.BaseUrl + "movie/translators";
             var parameters = $"?filmUrlId={Uri.EscapeDataString(videoUrlId)}";
@@ -27,7 +28,7 @@ namespace Kozachok.Repository.HttpRepository
             HttpClient client = new HttpClient();
             client.BaseAddress = new Uri(url);
 
-            HttpResponseMessage response = await client.GetAsync(parameters).ConfigureAwait(false);
+            HttpResponseMessage response = await client.GetAsync(parameters, cancellationToken).ConfigureAwait(false);
 
             if(response.IsSuccessStatusCode)
             {
@@ -39,7 +40,7 @@ namespace Kozachok.Repository.HttpRepository
             return null;
         }
 
-        public async Task<GetSeasonResult> GetSeasonsAsync(string filmId, string translatorId)
+        public async Task<GetSeasonResult> GetSeasonsAsync(string filmId, string translatorId, CancellationToken cancellationToken = default)
         {
             var url = MovieCatalogEndpoints.BaseUrl + "movie/seasons";
             var parameters = $"?filmId={Uri.EscapeDataString(filmId)}&translatorId={Uri.EscapeDataString(translatorId)}";
@@ -47,7 +48,7 @@ namespace Kozachok.Repository.HttpRepository
             HttpClient client = new HttpClient();
             client.BaseAddress = new Uri(url);
 
-            HttpResponseMessage response = await client.GetAsync(parameters).ConfigureAwait(false);
+            HttpResponseMessage response = await client.GetAsync(parameters, cancellationToken).ConfigureAwait(false);
 
             if (response.IsSuccessStatusCode)
             {
@@ -59,7 +60,7 @@ namespace Kozachok.Repository.HttpRepository
             return null;
         }
 
-        public async Task<Stream> GetMovieStreamAsync(string filmId, string translatorId, string filmType, int season, int episode)
+        public async Task<Stream> GetMovieStreamAsync(string filmId, string translatorId, string filmType, int season, int episode, CancellationToken cancellationToken = default)
         {
             var url = MovieCatalogEndpoints.BaseUrl + "movie/stream";
             var parameters = $"?filmId={Uri.EscapeDataString(filmId)}&translatorId={Uri.EscapeDataString(translatorId)}&filmType={Uri.EscapeDataString(filmType)}&season={Uri.EscapeDataString(season.ToString())}&episode={Uri.EscapeDataString(episode.ToString())}";
@@ -67,7 +68,7 @@ namespace Kozachok.Repository.HttpRepository
             HttpClient client = new HttpClient();
             client.BaseAddress = new Uri(url);
 
-            HttpResponseMessage response = await client.GetAsync(parameters).ConfigureAwait(false);
+            HttpResponseMessage response = await client.GetAsync(parameters, cancellationToken).ConfigureAwait(false);
 
             if (response.IsSuccessStatusCode)
             {

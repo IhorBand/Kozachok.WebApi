@@ -15,6 +15,7 @@ using System.Linq;
 using System.Collections.Generic;
 using AutoMapper;
 using Kozachok.Shared.DTO.Models.DomainEntities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kozachok.Domain.Handlers.Queries
 {
@@ -26,7 +27,7 @@ namespace Kozachok.Domain.Handlers.Queries
         private readonly IRoomRepository roomRepository;
         private readonly IRoomUserRepository roomUserRepository;
         private readonly IPlaylistMovieRepository playlistMovieRepository;
-        private readonly IPlaylistQualityRepository playlistQualityRepository;
+        private readonly IPlaylistMovieVideoQualityRepository playlistQualityRepository;
         private readonly IUser user;
         private readonly IMapper mapper;
 
@@ -37,7 +38,7 @@ namespace Kozachok.Domain.Handlers.Queries
             IRoomRepository roomRepository,
             IRoomUserRepository roomUserRepository,
             IPlaylistMovieRepository playlistMovieRepository,
-            IPlaylistQualityRepository playlistQualityRepository,
+            IPlaylistMovieVideoQualityRepository playlistQualityRepository,
             IUser user,
             IMapper mapper)
         : base(
@@ -65,7 +66,7 @@ namespace Kozachok.Domain.Handlers.Queries
             request
                 .IsInvalidGuid(e => e.RoomId, async () => await Bus.InvokeDomainNotificationAsync("RoomId is invalid."));
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value);
+            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (currentUser == null || currentUser.Id == Guid.Empty)
             {
@@ -78,7 +79,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 return null;
             }
 
-            var room = await roomRepository.GetAsync(request.RoomId);
+            var room = await roomRepository.GetAsync(request.RoomId, cancellationToken);
 
             if (room == null || room.Id == Guid.Empty)
             {
@@ -88,7 +89,7 @@ namespace Kozachok.Domain.Handlers.Queries
 
             if (room.RoomTypeId != Shared.DTO.Enums.RoomType.Public)
             {
-                var roomUser = await roomUserRepository.FirstOrDefaultAsync(ru => ru.RoomId == request.RoomId && ru.UserId == user.Id);
+                var roomUser = await roomUserRepository.FirstOrDefaultAsync(ru => ru.RoomId == request.RoomId && ru.UserId == user.Id, cancellationToken);
                 if (roomUser == null || roomUser.Id == Guid.Empty)
                 {
                     await Bus.InvokeDomainNotificationAsync("User doesn't have permissions to use this room.");
@@ -110,13 +111,13 @@ namespace Kozachok.Domain.Handlers.Queries
             }
 
             var movieQuery = playlistMovieRepository.Query().Where(pm => pm.RoomId == room.Id);
-            var resultMovies = playlistMovieRepository.Page(movieQuery, currentPage, itemsPerPage);
+            var resultMovies = await playlistMovieRepository.PageAsync(movieQuery, currentPage, itemsPerPage, cancellationToken);
 
             var resultItems = new List<PlaylistMovies>();
 
             foreach (var movie in resultMovies.Items)
             {
-                var qualities = playlistQualityRepository.Query().Where(q => q.PlaylistMovieId == movie.Id).ToList();
+                var qualities = await playlistQualityRepository.Query().Where(q => q.PlaylistMovieId == movie.Id).ToListAsync(cancellationToken);
                 
                 resultItems.Add(new PlaylistMovies()
                 {

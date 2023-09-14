@@ -1,11 +1,11 @@
 ﻿using Kozachok.Shared.DTO.Common;
 using System;
+using System.Collections.Generic;
 
 namespace Kozachok.Shared.DTO.Models.DbEntities
 {
     public class PlaylistMovie : Entity
     {
-        // -> Empty contructor for EF
         public PlaylistMovie()
         {
             CreatedDateUtc = DateTime.UtcNow;
@@ -18,5 +18,8 @@ namespace Kozachok.Shared.DTO.Models.DbEntities
         public virtual string VideoUrlId { get; set; }
         public virtual string Name { get; set; }
         public virtual DateTime CreatedDateUtc { get; private set; }
+
+        public virtual Movie Movie { get; set; }
+        public virtual ICollection<PlaylistMovieVideo> PlaylistMovieVideos { get; set; }
     }
 }

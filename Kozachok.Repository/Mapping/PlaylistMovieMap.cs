@@ -3,6 +3,7 @@ using Kozachok.Shared.Abstractions.Mapping;
 using Kozachok.Shared.DTO.Models.DbEntities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 namespace Kozachok.Repository.Mapping
 {
     internal class PlaylistMovieMap : DbEntityConfiguration<PlaylistMovie>, IEntityMap
@@ -12,6 +13,12 @@ namespace Kozachok.Repository.Mapping
             entity.ToTable("T_Playlist_Movie", "dbo");
             entity.Property(p => p.Id).HasColumnName("Id");
             entity.Property(p => p.Id).ValueGeneratedOnAdd();
+
+
+            entity.HasMany(x => x.PlaylistMovieVideos)
+                .WithOne(x => x.PlaylistMovie);
+
+            entity.HasOne(x => x.Movie);
         }
     }
 }

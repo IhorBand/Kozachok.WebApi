@@ -6,7 +6,6 @@ namespace Kozachok.Shared.DTO.Models.DbEntities
 {
     public class StoredEvent : Entity
     {
-        // -> Empty contructor for EF
         protected StoredEvent()
         {
 

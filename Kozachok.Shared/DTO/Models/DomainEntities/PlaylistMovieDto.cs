@@ -9,6 +9,6 @@ namespace Kozachok.Shared.DTO.Models.DomainEntities
         public MovieDto Movie { get; set; }
         public int OrderNumber { get; set; }
         public string Name { get; set; }
-        public List<MovieQualityDto> MovieQualityDtOs { get; set; }
+        public List<PlaylistMovieVideoDto> PlaylistMovieVideoDtOs { get; set; }
     }
 }

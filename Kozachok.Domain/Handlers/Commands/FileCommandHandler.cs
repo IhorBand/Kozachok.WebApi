@@ -73,7 +73,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return null;
             }
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value);
+            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (currentUser == null)
             {
@@ -81,7 +81,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return null;
             }
 
-            var fileServer = await fileServerRepository.FirstOrDefaultAsync(fs => fs.IsActive);
+            var fileServer = await fileServerRepository.FirstOrDefaultAsync(fs => fs.IsActive, cancellationToken);
 
             if (fileServer == null || fileServer.Id == Guid.Empty)
             {
@@ -98,12 +98,12 @@ namespace Kozachok.Domain.Handlers.Commands
             var uploadedFile = File.Create(fileName, fileServer.Id, Shared.DTO.Enums.FileType.Image, extension, fullFilePath, fileUrl, true);
             uploadedFile.SetSize(request.File.Length);
 
-            await fileRepository.AddAsync(uploadedFile);
+            await fileRepository.AddAsync(uploadedFile, cancellationToken);
 
             var oldImageFileId = currentUser.ThumbnailImageFileId;
 
             currentUser.SetThumbnailImageFileId(uploadedFile.Id);
-            await userRepository.UpdateAsync(currentUser);
+            userRepository.Update(currentUser);
             
             try
             { 
@@ -112,10 +112,10 @@ namespace Kozachok.Domain.Handlers.Commands
                 File previousImage = null;
                 if (oldImageFileId != null)
                 {
-                    previousImage = await fileRepository.GetAsync(oldImageFileId.Value);
+                    previousImage = await fileRepository.GetAsync(oldImageFileId.Value, cancellationToken);
                     if (previousImage != null)
                     {
-                        await fileRepository.DeleteAsync(previousImage.Id);
+                        await fileRepository.DeleteAsync(previousImage.Id, cancellationToken);
                     }
                 }
 

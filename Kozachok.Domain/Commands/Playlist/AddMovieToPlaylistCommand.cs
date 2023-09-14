@@ -8,6 +8,7 @@ namespace Kozachok.Domain.Commands.Playlist
         public Guid RoomId { get; set; }
         public Guid MovieId { get; set; }
         public string TranslatorId { get; set; }
+        public string TranslatorName { get; set; }
         public int Season { get; set; }
         public int Episode { get; set; }
     }

@@ -50,7 +50,7 @@ namespace Kozachok.WebApi.Setup
                     )
                 .ToList();
 
-        public static void PetiaZhuvyi(this IMapperConfigurationExpression configuration)
+        public static void ConfigureDomainMappingProfiles(this IMapperConfigurationExpression configuration)
         {
             var profiles = typeof(DomainProfile).Assembly.GetTypes().Where(x => typeof(Profile).IsAssignableFrom(x));
             foreach (var profile in profiles)

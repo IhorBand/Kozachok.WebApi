@@ -39,7 +39,7 @@ namespace Kozachok.Domain.Handlers.Queries
 
         public async Task<List<Translator>> Handle(GetMovieTranslatorsQuery request, CancellationToken cancellationToken)
         {
-            var movie = await movieRepository.FirstOrDefaultAsync(m => m.Id == request.MovieId);
+            var movie = await movieRepository.FirstOrDefaultAsync(m => m.Id == request.MovieId, cancellationToken);
             
             if (movie == null)
             {
@@ -47,14 +47,14 @@ namespace Kozachok.Domain.Handlers.Queries
                 return null;
             }
             
-            var result = await movieCatalogRepository.GetTranslatorsAsync(movie.VideoUrlId);
+            var result = await movieCatalogRepository.GetTranslatorsAsync(movie.VideoUrlId, cancellationToken);
 
             return result;
         }
 
         public async Task<GetSeasonResult> Handle(GetMovieSeasonsQuery request, CancellationToken cancellationToken)
         {
-            var movie = await movieRepository.FirstOrDefaultAsync(m => m.Id == request.MovieId);
+            var movie = await movieRepository.FirstOrDefaultAsync(m => m.Id == request.MovieId, cancellationToken);
 
             if (movie == null)
             {
@@ -62,14 +62,14 @@ namespace Kozachok.Domain.Handlers.Queries
                 return null;
             }
 
-            var result = await movieCatalogRepository.GetSeasonsAsync(movie.VideoId, request.TranslatorId);
+            var result = await movieCatalogRepository.GetSeasonsAsync(movie.VideoId, request.TranslatorId, cancellationToken);
 
             return result;
         }
 
         public async Task<Stream> Handle(GetMovieStreamQuery request, CancellationToken cancellationToken)
         {
-            var movie = await movieRepository.FirstOrDefaultAsync(m => m.Id == request.MovieId);
+            var movie = await movieRepository.FirstOrDefaultAsync(m => m.Id == request.MovieId, cancellationToken);
 
             if (movie == null)
             {
@@ -84,7 +84,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 movieType = GlobalConstants.MovieTypeSeries;
             }
 
-            var result = await movieCatalogRepository.GetMovieStreamAsync(movie.VideoId, request.TranslatorId, movieType, request.Season, request.Episode);
+            var result = await movieCatalogRepository.GetMovieStreamAsync(movie.VideoId, request.TranslatorId, movieType, request.Season, request.Episode, cancellationToken);
 
             return result;
         }
