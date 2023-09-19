@@ -67,7 +67,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 return null;
             }
 
-            if (IsUserAuthorized(user) == false)
+            if (user?.Id == null)
             {
                 await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return null;
@@ -115,7 +115,7 @@ namespace Kozachok.Domain.Handlers.Commands
                     previousImage = await fileRepository.GetAsync(oldImageFileId.Value, cancellationToken);
                     if (previousImage != null)
                     {
-                        await fileRepository.DeleteAsync(previousImage.Id, cancellationToken);
+                        fileRepository.Delete(previousImage);
                     }
                 }
 

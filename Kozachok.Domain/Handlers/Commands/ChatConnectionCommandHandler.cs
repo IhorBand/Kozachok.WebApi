@@ -7,6 +7,7 @@ using Kozachok.Shared.DTO.Common;
 using Kozachok.Shared.DTO.Models.DbEntities;
 using MediatR;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
 using Kozachok.Domain.Commands.ChatConnection;
@@ -16,11 +17,9 @@ namespace Kozachok.Domain.Handlers.Commands
 {
     public class ChatConnectionCommandHandler :
         CommandHandler,
-        IRequestHandler<JoinRoomCommand>
+        IRequestHandler<JoinRoomChatCommand>
     {
-        private readonly IUserRepository userRepository;
         private readonly IRoomRepository roomRepository;
-        private readonly IRoomUserRepository roomUserRepository;
         private readonly IChatConnectionRepository chatConnectionRepository;
         private readonly IUser user;
 
@@ -28,9 +27,7 @@ namespace Kozachok.Domain.Handlers.Commands
             IUnitOfWork uow,
             IMediatorHandler bus,
             INotificationHandler<DomainNotification> notifications,
-            IUserRepository userRepository,
             IRoomRepository roomRepository,
-            IRoomUserRepository roomUserRepository,
             IChatConnectionRepository chatConnectionRepository,
             IUser user
         )
@@ -40,51 +37,29 @@ namespace Kozachok.Domain.Handlers.Commands
                 notifications
         )
         {
-            this.userRepository = userRepository;
             this.roomRepository = roomRepository;
-            this.roomUserRepository = roomUserRepository;
             this.chatConnectionRepository = chatConnectionRepository;
             this.user = user;
         }
 
-        public async Task<Unit> Handle(JoinRoomCommand request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(JoinRoomChatCommand request, CancellationToken cancellationToken)
         {
-            if (IsUserAuthorized(user) == false)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return Unit.Value;
-            }
-
             request
                 .IsInvalidGuid(e => e.RoomId, async () => await Bus.InvokeDomainNotificationAsync("RoomId is invalid."))
                 .IsInvalidGuid(e => e.UserId, async () => await Bus.InvokeDomainNotificationAsync("UserId is invalid."));
-
-            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
-
-            if (currentUser == null || currentUser.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return Unit.Value;
-            }
 
             if (!IsValidOperation())
             {
                 return Unit.Value;
             }
+            
+            var isUserHavePermissionToJoinChat = await roomRepository
+                .AnyAsync(r => r.Id == request.RoomId && r.RoomUsers.Any(ru => ru.UserId == user.Id), 
+                    cancellationToken);
 
-            var room = await roomRepository.GetAsync(request.RoomId, cancellationToken);
-
-            if (room == null || room.Id == Guid.Empty)
+            if (!isUserHavePermissionToJoinChat)
             {
-                await Bus.InvokeDomainNotificationAsync("Room doesn't exist.");
-                return Unit.Value;
-            }
-
-            var roomUser = await roomUserRepository.FirstOrDefaultAsync(ru => ru.UserId == user.Id && ru.RoomId == request.RoomId, cancellationToken);
-
-            if (roomUser == null || roomUser.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("User doesn't have permission to use this room.");
+                await Bus.InvokeDomainNotificationAsync("User must join room before use chat.");
                 return Unit.Value;
             }
 
@@ -93,7 +68,6 @@ namespace Kozachok.Domain.Handlers.Commands
             if (connection != null && connection.Id != Guid.Empty)
             {
                 await chatConnectionRepository.DeleteAsync(connection.Id, cancellationToken);
-                Commit();
             }
 
             var newConnection = ChatConnection.Create(request.UserId, request.RoomId, request.ConnectionId);

@@ -3,25 +3,35 @@ using Kozachok.Shared.Abstractions.Bus;
 using Kozachok.Shared.DTO.Common;
 using MediatR;
 using AutoMapper;
+using Kozachok.Shared.Abstractions.Identity;
 
 namespace Kozachok.WebApi.Controllers.Common
 {
     public class UserControllerBase : BaseController
     {
-        protected UserControllerBase(IMediatorHandler bus, IMapper mapper, INotificationHandler<DomainNotification> notifications) : base(bus, mapper, notifications)
+        protected UserControllerBase(IMediatorHandler bus, IMapper mapper, INotificationHandler<DomainNotification> notifications, IUser? user = null) : base(bus, mapper, notifications)
         {
+            CurrentUser = user;
         }
+
+        protected IUser? CurrentUser;
 
         protected Guid UserId
         {
             get
             {
-                var idStr = this.GetClaimValue(JwtCustomClaimNames.UserId);
+                var idStr = GetClaimValue(JwtCustomClaimNames.UserId);
                 return new Guid(idStr);
             }
         }
 
-        protected string? Email => this.GetClaimValue(JwtCustomClaimNames.Email);
-        protected string? UserName => this.GetClaimValue(JwtCustomClaimNames.UserName);
+        protected string? Email => GetClaimValue(JwtCustomClaimNames.Email);
+        protected string? UserName => GetClaimValue(JwtCustomClaimNames.UserName);
+
+        protected bool IsUserAuthorized()
+        {
+            return CurrentUser?.Id != null
+                   && (CurrentUser.Id == null || CurrentUser.Id != Guid.Empty);
+        }
     }
 }

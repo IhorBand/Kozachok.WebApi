@@ -9,6 +9,7 @@ using System.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kozachok.Shared.DTO.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kozachok.Repository.Repositories
@@ -22,11 +23,13 @@ namespace Kozachok.Repository.Repositories
             this.mapper = mapper;
         }
 
-        public async Task<RoomFullInformationDto> GetRoomFullInformationDtoAsync(Guid roomId, CancellationToken cancellationToken = default)
+        public async Task<RoomFullInformationDto> GetRoomFullInformationDtoAsync(Guid roomId, Guid currentUserId, CancellationToken cancellationToken = default)
         {
             var roomDataModel = await Query()
                 .Include(r => r.RoomUsers)
                 .Include(r => r.PlaylistMovies)
+                .Where(r => r.Id == roomId && (r.RoomTypeId == RoomType.Public 
+                            || (r.RoomTypeId == RoomType.Private && r.RoomUsers.Any(ru => ru.UserId == currentUserId))))
                 .FirstOrDefaultAsync(r => r.Id == roomId, cancellationToken);
 
             if (roomDataModel == null)

@@ -39,7 +39,7 @@ namespace Kozachok.Domain.Handlers.Queries
 
         public async Task<List<Translator>> Handle(GetMovieTranslatorsQuery request, CancellationToken cancellationToken)
         {
-            var movie = await movieRepository.FirstOrDefaultAsync(m => m.Id == request.MovieId, cancellationToken);
+            var movie = await movieRepository.GetAsync(request.MovieId, cancellationToken);
             
             if (movie == null)
             {
@@ -54,7 +54,7 @@ namespace Kozachok.Domain.Handlers.Queries
 
         public async Task<GetSeasonResult> Handle(GetMovieSeasonsQuery request, CancellationToken cancellationToken)
         {
-            var movie = await movieRepository.FirstOrDefaultAsync(m => m.Id == request.MovieId, cancellationToken);
+            var movie = await movieRepository.GetAsync(request.MovieId, cancellationToken);
 
             if (movie == null)
             {
@@ -69,7 +69,7 @@ namespace Kozachok.Domain.Handlers.Queries
 
         public async Task<Stream> Handle(GetMovieStreamQuery request, CancellationToken cancellationToken)
         {
-            var movie = await movieRepository.FirstOrDefaultAsync(m => m.Id == request.MovieId, cancellationToken);
+            var movie = await movieRepository.GetAsync(request.MovieId, cancellationToken);
 
             if (movie == null)
             {

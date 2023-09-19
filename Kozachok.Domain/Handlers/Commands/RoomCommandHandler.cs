@@ -11,6 +11,7 @@ using Kozachok.Domain.Commands.Room;
 using Kozachok.Shared.DTO.Models.DbEntities;
 using Kozachok.Utils.Validation;
 using System;
+using System.Linq;
 using AutoMapper;
 using Kozachok.Shared.DTO.Models.DomainEntities;
 using Microsoft.EntityFrameworkCore;
@@ -25,7 +26,6 @@ namespace Kozachok.Domain.Handlers.Commands
         IRequestHandler<JoinRoomCommand>,
         IRequestHandler<LeaveRoomCommand>
     {
-        private readonly IUserRepository userRepository;
         private readonly IRoomRepository roomRepository;
         private readonly IRoomUserRepository roomUserRepository;
         private readonly IUser user;
@@ -35,7 +35,6 @@ namespace Kozachok.Domain.Handlers.Commands
             IUnitOfWork uow,
             IMediatorHandler bus,
             INotificationHandler<DomainNotification> notifications,
-            IUserRepository userRepository,
             IRoomRepository roomRepository,
             IRoomUserRepository roomUserRepository,
             IUser user,
@@ -46,7 +45,6 @@ namespace Kozachok.Domain.Handlers.Commands
                 notifications
         )
         {
-            this.userRepository = userRepository;
             this.roomRepository = roomRepository;
             this.roomUserRepository = roomUserRepository;
             this.user = user;
@@ -55,30 +53,16 @@ namespace Kozachok.Domain.Handlers.Commands
 
         public async Task<RoomDto> Handle(CreateRoomCommand request, CancellationToken cancellationToken)
         {
-            if(!IsUserAuthorized(user))
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return null;
-            }
-
             request
                 .IsNullEmptyOrWhitespace(e => e.Name, async () => await Bus.InvokeDomainNotificationAsync("Invalid name."))
                 .IsMatchMaxLength(e => e.Name, async () => await Bus.InvokeDomainNotificationAsync("Name is too big."));
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
-
-            if(currentUser == null || currentUser.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return null;
-            }
-
-            if (!IsValidOperation())
+            if (!IsValidOperation() || user?.Id == null)
             {
                 return null;
             }
 
-            var room = Room.Create(request.Name, request.RoomType, currentUser.Id);
+            var room = Room.Create(request.Name, request.RoomType, user.Id.Value);
             await roomRepository.AddAsync(room, cancellationToken);
 
             var roomUser = RoomUser.Create(user.Id.Value, room.Id, true);
@@ -91,24 +75,10 @@ namespace Kozachok.Domain.Handlers.Commands
 
         public async Task<Unit> Handle(UpdateRoomCommand request, CancellationToken cancellationToken)
         {
-            if (!IsUserAuthorized(user))
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return Unit.Value;
-            }
-
             request
                 .IsInvalidGuid(e => e.RoomId, async () => await Bus.InvokeDomainNotificationAsync("Invalid Room Id"))
                 .IsNullEmptyOrWhitespace(e => e.Name, async () => await Bus.InvokeDomainNotificationAsync("Invalid name."))
                 .IsMatchMaxLength(e => e.Name, async () => await Bus.InvokeDomainNotificationAsync("Name is too big."));
-
-            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
-
-            if (currentUser == null || currentUser.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return Unit.Value;
-            }
 
             if (!IsValidOperation())
             {
@@ -123,12 +93,13 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            if (room.OwnerUserId != currentUser.Id)
+            if (room.OwnerUserId != user.Id)
             {
                 await Bus.InvokeDomainNotificationAsync("User don't have permission to delete this room.");
                 return Unit.Value;
             }
 
+            //TODO: Automapper
             room.Name = request.Name;
             room.RoomTypeId = request.RoomType;
 
@@ -141,29 +112,16 @@ namespace Kozachok.Domain.Handlers.Commands
 
         public async Task<Unit> Handle(DeleteRoomCommand request, CancellationToken cancellationToken)
         {
-            if (!IsUserAuthorized(user))
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return Unit.Value;
-            }
-
-            request
-                .IsInvalidGuid(e => e.RoomId, async () => await Bus.InvokeDomainNotificationAsync("Invalid Room Id."));
-
-            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
-
-            if (currentUser == null || currentUser.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return Unit.Value;
-            }
-
             if (!IsValidOperation())
             {
                 return Unit.Value;
             }
 
-            var room = await roomRepository.GetAsync(request.RoomId, cancellationToken);
+            var room = await roomRepository
+                .Query()
+                .Include(r => r.RoomUsers)
+                .SingleOrDefaultAsync(r => r.Id == request.RoomId && r.OwnerUserId == user.Id, 
+                    cancellationToken);
 
             if (room == null || room.Id == Guid.Empty)
             {
@@ -171,25 +129,8 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            var userRoomArr = await roomUserRepository.Query(e => e.RoomId == room.Id).ToListAsync(cancellationToken);
-
-            if (room.OwnerUserId != currentUser.Id)
-            {
-                await Bus.InvokeDomainNotificationAsync("User don't have permission to delete this room.");
-                return Unit.Value;
-            }
-
-            if (userRoomArr != null && userRoomArr.Count > 0)
-            {
-                foreach(var userRoom in userRoomArr)
-                {
-                    await roomUserRepository.DeleteAsync(userRoom.Id, cancellationToken);
-                }
-
-                Commit();
-            }
-
-            await roomRepository.DeleteAsync(room.Id, cancellationToken);
+            roomUserRepository.DeleteRange(room.RoomUsers);
+            roomRepository.Delete(room);
 
             Commit();
 
@@ -198,45 +139,30 @@ namespace Kozachok.Domain.Handlers.Commands
 
         public async Task<Unit> Handle(JoinRoomCommand request, CancellationToken cancellationToken)
         {
-            if (!IsUserAuthorized(user))
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return Unit.Value;
-            }
-
-            request
-                .IsInvalidGuid(e => e.RoomId, async () => await Bus.InvokeDomainNotificationAsync("Invalid Room Id"));
-
-            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
-
-            if (currentUser == null || currentUser.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return Unit.Value;
-            }
-
             if (!IsValidOperation())
             {
                 return Unit.Value;
             }
 
-            var room = await roomRepository.GetAsync(request.RoomId, cancellationToken);
-
-            if (room == null || room.Id == Guid.Empty)
+            if (user?.Id == null)
             {
-                await Bus.InvokeDomainNotificationAsync("Room doesn't exist.");
+                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return Unit.Value;
             }
 
-            var isUserAlreadyJoinedRoom = await roomUserRepository.AnyAsync(e => e.RoomId == room.Id && e.UserId == currentUser.Id, cancellationToken);
+            //TODO: Need to add validation for private rooms(user can join private room only with secret key)
+            var isUserNotInRoom = await roomRepository
+                .AnyAsync(r => r.Id == request.RoomId 
+                               && r.RoomUsers.All(ru => ru.UserId != user.Id),
+                    cancellationToken);
 
-            if (isUserAlreadyJoinedRoom)
+            if (!isUserNotInRoom)
             {
                 await Bus.InvokeDomainNotificationAsync("User already in this room.");
                 return Unit.Value;
             }
 
-            var roomUser = RoomUser.Create(user.Id.Value, room.Id, false);
+            var roomUser = RoomUser.Create(user.Id.Value, request.RoomId, false);
             await roomUserRepository.AddAsync(roomUser, cancellationToken);
 
             Commit();
@@ -246,51 +172,25 @@ namespace Kozachok.Domain.Handlers.Commands
 
         public async Task<Unit> Handle(LeaveRoomCommand request, CancellationToken cancellationToken)
         {
-            if (!IsUserAuthorized(user))
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return Unit.Value;
-            }
-
-            request
-                .IsInvalidGuid(e => e.RoomId, async () => await Bus.InvokeDomainNotificationAsync("Invalid Room Id"));
-
-            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
-
-            if (currentUser == null || currentUser.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return Unit.Value;
-            }
-
             if (!IsValidOperation())
             {
                 return Unit.Value;
             }
 
-            var room = await roomRepository.GetAsync(request.RoomId, cancellationToken);
-
-            if (room == null || room.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("Room doesn't exist.");
-                return Unit.Value;
-            }
-
-            if(room.OwnerUserId == currentUser.Id)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is owner and cannot leave this room.");
-                return Unit.Value;
-            }
-
-            var roomUser = await roomUserRepository.FirstOrDefaultAsync(e => e.RoomId == room.Id && e.UserId == currentUser.Id, cancellationToken);
+            var roomUser = await roomUserRepository
+                .Query()
+                .SingleOrDefaultAsync(ru => ru.IsOwner == false 
+                                            && ru.RoomId == request.RoomId 
+                                            && ru.UserId == user.Id, 
+                    cancellationToken);
 
             if (roomUser == null || roomUser.Id == Guid.Empty)
             {
-                await Bus.InvokeDomainNotificationAsync("User must join this room first.");
+                await Bus.InvokeDomainNotificationAsync("User cannot leave this room.");
                 return Unit.Value;
             }
 
-            await roomUserRepository.DeleteAsync(roomUser.Id, cancellationToken);
+            roomUserRepository.Delete(roomUser);
 
             Commit();
 

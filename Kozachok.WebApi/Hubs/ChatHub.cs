@@ -44,7 +44,7 @@ namespace Kozachok.WebApi.Hubs
 
         public async Task JoinRoomChat(Guid roomId)
         {
-            await bus.SendAsync(new JoinRoomCommand()
+            await bus.SendAsync(new JoinRoomChatCommand()
             {
                 UserId = UserId,
                 RoomId = roomId,
