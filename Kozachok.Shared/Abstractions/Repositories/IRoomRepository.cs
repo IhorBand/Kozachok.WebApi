@@ -9,6 +9,6 @@ namespace Kozachok.Shared.Abstractions.Repositories
 {
     public interface IRoomRepository : ICrudRepository<Room>
     {
-        public Task<RoomFullInformationDto> GetRoomFullInformationDtoAsync(Guid roomId, CancellationToken ct = default);
+        public Task<RoomFullInformationDto> GetRoomFullInformationDtoAsync(Guid roomId, Guid currentUserId, CancellationToken ct = default);
     }
 }

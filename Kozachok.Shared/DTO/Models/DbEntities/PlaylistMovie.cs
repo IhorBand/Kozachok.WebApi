@@ -20,6 +20,7 @@ namespace Kozachok.Shared.DTO.Models.DbEntities
         public virtual DateTime CreatedDateUtc { get; private set; }
 
         public virtual Movie Movie { get; set; }
+        public virtual Room Room { get; set; }
         public virtual ICollection<PlaylistMovieVideo> PlaylistMovieVideos { get; set; }
     }
 }

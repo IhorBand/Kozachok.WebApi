@@ -14,7 +14,11 @@ namespace Kozachok.Repository.Mapping
             entity.Property(p => p.Id).HasColumnName("Id");
             entity.Property(p => p.Id).ValueGeneratedOnAdd();
 
+
             entity.HasMany(x => x.RoomUsers)
+                .WithOne(x => x.Room);
+            
+            entity.HasMany(x => x.PlaylistMovies)
                 .WithOne(x => x.Room);
         }
     }

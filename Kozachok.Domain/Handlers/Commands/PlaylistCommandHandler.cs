@@ -10,7 +10,6 @@ using System;
 using System.Threading.Tasks;
 using System.Threading;
 using Kozachok.Domain.Commands.Playlist;
-using Kozachok.Utils.Validation;
 using System.Linq;
 using Kozachok.Domain.Queries.MovieCatalog;
 using Microsoft.EntityFrameworkCore;
@@ -22,26 +21,22 @@ namespace Kozachok.Domain.Handlers.Commands
         IRequestHandler<AddMovieToPlaylistCommand>,
         IRequestHandler<DeleteMovieFromPlaylistCommand>
     {
-        private readonly IUserRepository userRepository;
-        private readonly IRoomRepository roomRepository;
-        private readonly IRoomUserRepository roomUserRepository;
         private readonly IPlaylistMovieRepository playlistMovieRepository;
         private readonly IPlaylistMovieVideoRepository playlistMovieVideoRepository;
         private readonly IPlaylistMovieVideoQualityRepository playlistMovieVideoQualityRepository;
         private readonly IMovieRepository movieRepository;
+        private readonly IRoomRepository roomRepository;
         private readonly IUser user;
 
         public PlaylistCommandHandler(
             IUnitOfWork uow,
             IMediatorHandler bus,
             INotificationHandler<DomainNotification> notifications,
-            IUserRepository userRepository,
-            IRoomRepository roomRepository,
-            IRoomUserRepository roomUserRepository,
             IPlaylistMovieRepository playlistMovieRepository,
             IPlaylistMovieVideoRepository playlistMovieVideoRepository,
             IPlaylistMovieVideoQualityRepository playlistMovieVideoQualityRepository,
             IMovieRepository movieRepository,
+            IRoomRepository roomRepository,
             IUser user)
         : base(
                 uow,
@@ -49,54 +44,22 @@ namespace Kozachok.Domain.Handlers.Commands
                 notifications
         )
         {
-            this.userRepository = userRepository;
-            this.roomRepository = roomRepository;
-            this.roomUserRepository = roomUserRepository;
             this.playlistMovieRepository = playlistMovieRepository;
             this.playlistMovieVideoRepository = playlistMovieVideoRepository;
             this.playlistMovieVideoQualityRepository = playlistMovieVideoQualityRepository;
             this.movieRepository = movieRepository;
+            this.roomRepository = roomRepository;
             this.user = user;
         }
 
         public async Task<Unit> Handle(AddMovieToPlaylistCommand request, CancellationToken cancellationToken)
         {
-            if (IsUserAuthorized(user) == false)
+            var isUserHasPermissionToAddMovie = await roomRepository
+                .AnyAsync(r => r.Id == request.RoomId && r.OwnerUserId == user.Id, cancellationToken);
+
+            if (!isUserHasPermissionToAddMovie)
             {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return Unit.Value;
-            }
-
-            request
-                .IsInvalidGuid(e => e.RoomId, async () => await Bus.InvokeDomainNotificationAsync("RoomId is invalid."))
-                .IsInvalidGuid(e => e.MovieId, async () => await Bus.InvokeDomainNotificationAsync("MovieId is invalid."));
-
-            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
-
-            if (currentUser == null || currentUser.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return Unit.Value;
-            }
-
-            if (!IsValidOperation())
-            {
-                return Unit.Value;
-            }
-
-            var room = await roomRepository.GetAsync(request.RoomId, cancellationToken);
-
-            if (room == null || room.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("Room doesn't exist.");
-                return Unit.Value;
-            }
-
-            var roomUser = await roomUserRepository.FirstOrDefaultAsync(ru => ru.UserId == user.Id && ru.RoomId == request.RoomId, cancellationToken);
-
-            if (roomUser == null || roomUser.Id == Guid.Empty || !roomUser.IsOwner)
-            {
-                await Bus.InvokeDomainNotificationAsync("User doesn't have permission to use this room.");
+                await Bus.InvokeDomainNotificationAsync("User doesn't have permission to add movie to this room.");
                 return Unit.Value;
             }
 
@@ -107,14 +70,12 @@ namespace Kozachok.Domain.Handlers.Commands
                 await Bus.InvokeDomainNotificationAsync("Movie doesn't exist.");
                 return Unit.Value;
             }
-            
-            var playlistMovieCount = await playlistMovieRepository.Query().CountAsync(m => m.RoomId == request.RoomId, cancellationToken);
 
-            var orderNumber = playlistMovieCount > 0 ? 
-                await playlistMovieRepository.Query()
+            var orderNumber = await playlistMovieRepository
+                    .Query()
                     .Where(m => m.RoomId == request.RoomId)
-                    .MaxAsync(m => m.OrderNumber, cancellationToken) 
-                : 0;
+                    .MaxAsync(m => m.OrderNumber, 
+                        cancellationToken);
 
             var movieStream = await Bus.RequestAsync(new GetMovieStreamQuery
             {
@@ -124,7 +85,7 @@ namespace Kozachok.Domain.Handlers.Commands
                 Episode = request.Episode
             });
 
-            if (movieStream == null || movieStream.Resolutions == null)
+            if (movieStream?.Resolutions == null)
             {
                 await Bus.InvokeDomainNotificationAsync("Cannot Fetch Movie Stream.");
                 return Unit.Value;
@@ -164,7 +125,7 @@ namespace Kozachok.Domain.Handlers.Commands
             foreach (var resolution in movieStream.Resolutions.Where(resolution => !string.IsNullOrEmpty(resolution.Link)))
             {
                 isStreamFetched = true;
-                
+
                 var resolutionDefinition = resolution.ResolutionName switch
                 {
                     "360p" => Shared.DTO.Enums.VideoQualityType.Low360,
@@ -204,63 +165,27 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            request
-                .IsInvalidGuid(e => e.PlaylistMovieId, async () => await Bus.InvokeDomainNotificationAsync("RoomId is invalid."));
+            var playlistMovie = await playlistMovieRepository
+                .Query(q => q.Id == request.PlaylistMovieId)
+                .Include(q => q.Room)
+                .Include(q => q.PlaylistMovieVideos)
+                    .ThenInclude(q => q.PlaylistMovieVideoQualities)
+                .SingleOrDefaultAsync(cancellationToken);
 
-            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
+            var isUserHasPermissionToRemoveMovie = playlistMovie != null && playlistMovie.Room.OwnerUserId == user.Id;
 
-            if (currentUser == null || currentUser.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return Unit.Value;
-            }
-
-            if (!IsValidOperation())
-            {
-                return Unit.Value;
-            }
-
-            var playlistMovie = await playlistMovieRepository.GetAsync(request.PlaylistMovieId, cancellationToken);
-
-            if (playlistMovie == null || playlistMovie.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("Playlist for Room doesn't exist.");
-                return Unit.Value;
-            }
-
-            var roomUser = await roomUserRepository.FirstOrDefaultAsync(ru => ru.UserId == user.Id && ru.RoomId == playlistMovie.RoomId, cancellationToken);
-
-            if (roomUser == null || roomUser.Id == Guid.Empty || !roomUser.IsOwner)
+            if (!isUserHasPermissionToRemoveMovie)
             {
                 await Bus.InvokeDomainNotificationAsync("User doesn't have permission to use this room.");
                 return Unit.Value;
             }
-            
-            var playlistMovieVideoQualities = await playlistMovieVideoQualityRepository
-                .Query()
-                .Where(q => q.PlaylistMovieId == playlistMovie.Id)
-                .ToListAsync(cancellationToken);
 
-            foreach (var playlistMovieVideoQuality in playlistMovieVideoQualities)
-            {
-                await playlistMovieVideoQualityRepository.DeleteAsync(playlistMovieVideoQuality.Id, cancellationToken);
-            }
+            playlistMovieVideoQualityRepository.DeleteRange(playlistMovie.PlaylistMovieVideos
+                    .SelectMany(q => q.PlaylistMovieVideoQualities));
 
-            Commit();
+            playlistMovieVideoRepository.DeleteRange(playlistMovie.PlaylistMovieVideos);
 
-            var playlistMovieVideos = await playlistMovieVideoRepository
-                .Query()
-                .Where(q => q.PlaylistMovieId == playlistMovie.Id)
-                .ToListAsync(cancellationToken);
-
-            foreach (var playlistMovieVideo in playlistMovieVideos)
-            {
-                await playlistMovieVideoRepository.DeleteAsync(playlistMovieVideo.Id, cancellationToken);
-            }
-
-            Commit();
-
-            await playlistMovieRepository.DeleteAsync(playlistMovie.Id, cancellationToken);
+            playlistMovieRepository.Delete(playlistMovie);
 
             Commit();
 

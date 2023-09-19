@@ -6,13 +6,13 @@ using Kozachok.Shared.DTO.Common;
 using MediatR;
 using System.Threading.Tasks;
 using System.Threading;
-using Kozachok.Shared.DTO.Models.DbEntities;
 using Kozachok.Domain.Queries.Room;
 using Kozachok.Utils.Validation;
 using System;
 using Kozachok.Shared;
 using System.Linq;
 using AutoMapper;
+using Kozachok.Shared.DTO.Enums;
 using Kozachok.Shared.DTO.Models.DomainEntities;
 
 namespace Kozachok.Domain.Handlers.Queries
@@ -25,7 +25,6 @@ namespace Kozachok.Domain.Handlers.Queries
         IRequestHandler<GetJoinedRoomsQuery, PagedResult<RoomDto>>,
         IRequestHandler<GetRoomFullInformationDtoQuery, RoomFullInformationDto>
     {
-        private readonly IUserRepository userRepository;
         private readonly IRoomRepository roomRepository;
         private readonly IRoomUserRepository roomUserRepository;
 
@@ -35,7 +34,6 @@ namespace Kozachok.Domain.Handlers.Queries
         public RoomQueryHandler(
             IMediatorHandler bus,
             INotificationHandler<DomainNotification> notifications,
-            IUserRepository userRepository,
             IRoomRepository roomRepository,
             IRoomUserRepository roomUserRepository,
             IMapper mapper, 
@@ -45,7 +43,6 @@ namespace Kozachok.Domain.Handlers.Queries
                 notifications
             )
         {
-            this.userRepository = userRepository;
             this.roomRepository = roomRepository;
             this.roomUserRepository = roomUserRepository;
             this.mapper = mapper;
@@ -54,25 +51,12 @@ namespace Kozachok.Domain.Handlers.Queries
 
         public async Task<RoomDto> Handle(GetRoomQuery request, CancellationToken cancellationToken)
         {
-            if (IsUserAuthorized(user) == false)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return null;
-            }
-
             request
-                .IsInvalidGuid(e => e.RoomId, async () => await Bus.InvokeDomainNotificationAsync("UserId is invalid."));
+                .IsInvalidGuid(e => e.RoomId,
+                    async () => await Bus.InvokeDomainNotificationAsync("UserId is invalid."));
 
             if (!IsValidOperation())
             {
-                return null;
-            }
-
-            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
-
-            if (currentUser == null || currentUser.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
                 return null;
             }
 
@@ -84,37 +68,25 @@ namespace Kozachok.Domain.Handlers.Queries
                 return null;
             }
 
-            if (room.RoomTypeId == Shared.DTO.Enums.RoomType.Public)
+            if (room.RoomTypeId != RoomType.Public)
             {
-                return mapper.Map<RoomDto>(room);
+                var isUserHavePermission = await roomUserRepository
+                    .AnyAsync(ru => ru.RoomId == request.RoomId && (ru.Room.RoomTypeId == RoomType.Public
+                                    || (ru.Room.RoomTypeId == RoomType.Private && ru.RoomId == request.RoomId &&
+                                        ru.UserId == user.Id)), cancellationToken);
+
+                if (!isUserHavePermission)
+                {
+                    await Bus.InvokeDomainNotificationAsync("User doesn't have permission to use this room.");
+                    return null;
+                }
             }
 
-            var userInRoom =
-                await roomUserRepository.FirstOrDefaultAsync(e => e.UserId == user.Id.Value && e.RoomId == room.Id, cancellationToken);
-
-            if (userInRoom != null && userInRoom.Id != Guid.Empty)
-                return mapper.Map<RoomDto>(room);
-
-            await Bus.InvokeDomainNotificationAsync("User doesn't have permission to view this room.");
-            return null;
+            return mapper.Map<RoomDto>(room);
         }
 
         public async Task<PagedResult<RoomDto>> Handle(GetPublicRoomsQuery request, CancellationToken cancellationToken)
         {
-            if (IsUserAuthorized(user) == false)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return null;
-            }
-
-            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
-
-            if (currentUser == null || currentUser.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return null;
-            }
-
             var currentPage = 1;
             var itemsPerPage = GlobalConstants.DefaultPageSize;
 
@@ -129,7 +101,7 @@ namespace Kozachok.Domain.Handlers.Queries
             }
 
             var query =
-                roomRepository.Query().Where(e => e.RoomTypeId == Shared.DTO.Enums.RoomType.Public);
+                roomRepository.Query().Where(e => e.RoomTypeId == RoomType.Public);
 
             if (!string.IsNullOrWhiteSpace(request.Name))
             {
@@ -144,20 +116,6 @@ namespace Kozachok.Domain.Handlers.Queries
 
         public async Task<PagedResult<RoomDto>> Handle(GetCreatedRoomsQuery request, CancellationToken cancellationToken)
         {
-            if (IsUserAuthorized(user) == false)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return null;
-            }
-
-            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
-
-            if (currentUser == null || currentUser.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return null;
-            }
-
             var currentPage = 1;
             var itemsPerPage = GlobalConstants.DefaultPageSize;
 
@@ -171,7 +129,7 @@ namespace Kozachok.Domain.Handlers.Queries
                 itemsPerPage = request.ItemsPerPage.Value;
             }
 
-            var query = roomRepository.Query().Where(e => e.OwnerUserId == currentUser.Id);
+            var query = roomRepository.Query().Where(e => e.OwnerUserId == user.Id);
 
             if (!string.IsNullOrWhiteSpace(request.Name))
             {
@@ -186,20 +144,6 @@ namespace Kozachok.Domain.Handlers.Queries
 
         public async Task<PagedResult<RoomDto>> Handle(GetJoinedRoomsQuery request, CancellationToken cancellationToken)
         {
-            if (IsUserAuthorized(user) == false)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return null;
-            }
-
-            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
-
-            if (currentUser == null || currentUser.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return null;
-            }
-
             var currentPage = 1;
             var itemsPerPage = GlobalConstants.DefaultPageSize;
 
@@ -214,7 +158,7 @@ namespace Kozachok.Domain.Handlers.Queries
             }
 
             var query = roomUserRepository.Query()
-                .Where(roomUser => roomUser.UserId == currentUser.Id && roomUser.IsOwner == false)
+                .Where(roomUser => roomUser.UserId == user.Id && roomUser.IsOwner == false)
                 .Join(roomRepository.Query(),
                     roomUser => roomUser.RoomId,
                     room => room.Id,
@@ -233,48 +177,7 @@ namespace Kozachok.Domain.Handlers.Queries
 
         public async Task<RoomFullInformationDto> Handle(GetRoomFullInformationDtoQuery request, CancellationToken cancellationToken)
         {
-            if (IsUserAuthorized(user) == false)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return null;
-            }
-
-            request
-                .IsInvalidGuid(e => e.RoomId,
-                    async () => await Bus.InvokeDomainNotificationAsync("UserId is invalid."));
-
-            if (!IsValidOperation())
-            {
-                return null;
-            }
-
-            var currentUser = await userRepository.GetAsync(user.Id.Value, cancellationToken);
-
-            if (currentUser == null || currentUser.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return null;
-            }
-
-            var room = await roomRepository.GetAsync(request.RoomId, cancellationToken);
-
-            if (room == null || room.Id == Guid.Empty)
-            {
-                await Bus.InvokeDomainNotificationAsync("Room doesn't exist.");
-                return null;
-            }
-
-            var userInRoom =
-                await roomUserRepository.FirstOrDefaultAsync(e => e.UserId == user.Id.Value && e.RoomId == room.Id, cancellationToken);
-
-            if (room.RoomTypeId != Shared.DTO.Enums.RoomType.Public
-                && (userInRoom == null || userInRoom.Id == Guid.Empty))
-            {
-                await Bus.InvokeDomainNotificationAsync("User doesn't have permission to view this room.");
-                return null;
-            }
-
-            var roomFullInformationDto = await roomRepository.GetRoomFullInformationDtoAsync(request.RoomId, cancellationToken);
+            var roomFullInformationDto = await roomRepository.GetRoomFullInformationDtoAsync(request.RoomId, user.Id.Value, cancellationToken);
 
             return roomFullInformationDto;
         }

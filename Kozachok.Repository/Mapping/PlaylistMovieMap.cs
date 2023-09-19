@@ -19,6 +19,9 @@ namespace Kozachok.Repository.Mapping
                 .WithOne(x => x.PlaylistMovie);
 
             entity.HasOne(x => x.Movie);
+
+            entity.HasOne(x => x.Room)
+                .WithMany(x => x.PlaylistMovies);
         }
     }
 }

@@ -27,6 +27,7 @@ using Kozachok.Domain.Emails;
 using AspNetCoreRateLimit;
 using Kozachok.Repository.HttpRepository;
 using Kozachok.Shared.Abstractions.HttpRepositories;
+using Serilog;
 
 namespace Kozachok.WebApi
 {

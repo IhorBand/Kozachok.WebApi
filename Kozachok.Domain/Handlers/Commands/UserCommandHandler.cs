@@ -73,6 +73,14 @@ namespace Kozachok.Domain.Handlers.Commands
                 return null;
             }
 
+            var isEmailAlreadyExist = await userRepository.AnyAsync(u => u.Email == request.Email, cancellationToken);
+
+            if (isEmailAlreadyExist)
+            {
+                await Bus.InvokeDomainNotificationAsync("Email already exist.");
+                return null;
+            }
+
             var entity = User.Create(request.Name, request.Email, request.Password, false);
 
             await userRepository.AddAsync(entity, cancellationToken);
@@ -93,12 +101,6 @@ namespace Kozachok.Domain.Handlers.Commands
 
         public async Task<Unit> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
         {
-            if (IsUserAuthorized(user) == false)
-            {
-                await Bus.InvokeDomainNotificationAsync("User is not authorized.");
-                return Unit.Value;
-            }
-
             var original = await userRepository.GetAsync(user.Id.Value, cancellationToken);
 
             if (original == null || original.Id == Guid.Empty)
@@ -180,9 +182,10 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            await userRepository.DeleteAsync(user.Id.Value, cancellationToken);
+            userRepository.Delete(original);
 
             Commit();
+
             await Bus.InvokeAsync(new DeleteUserEvent(user.Id.Value));
 
             return Unit.Value;
@@ -303,7 +306,7 @@ namespace Kozachok.Domain.Handlers.Commands
 
             foreach (var oldUserConfirmationCode in oldUserConfirmationCodes)
             {
-                await userConfirmationCodeRepository.DeleteAsync(oldUserConfirmationCode.Id, cancellationToken);
+                userConfirmationCodeRepository.Delete(oldUserConfirmationCode);
             }
 
             Commit();

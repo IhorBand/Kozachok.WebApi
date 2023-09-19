@@ -28,6 +28,7 @@ namespace Kozachok.WebApi.Controllers
             {
                 MovieId = movieId
             });
+            
             return Response(result);
         }
 
@@ -42,12 +43,13 @@ namespace Kozachok.WebApi.Controllers
                 MovieId = movieId,
                 TranslatorId = translatorId
             });
+            
             return Response(result);
         }
 
         [HttpGet("{MovieId}/Translator/{TranslatorId}/Season/{season}/Episode/{episode}")]
         [BearerAuthorization]
-        public async Task<IActionResult> GetMovieSeasons(
+        public async Task<IActionResult> GetMovieStream(
             [FromRoute(Name = "MovieId")] Guid movieId,
             [FromRoute(Name = "TranslatorId")] string translatorId,
             [FromRoute(Name = "season")] int season = 1,
@@ -60,6 +62,7 @@ namespace Kozachok.WebApi.Controllers
                 Season = season,
                 Episode = episode
             });
+            
             return Response(result);
         }
     }
