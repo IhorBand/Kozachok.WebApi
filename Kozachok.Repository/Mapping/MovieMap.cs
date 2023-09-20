@@ -13,6 +13,10 @@ namespace Kozachok.Repository.Mapping
             entity.ToTable("T_Movie", "dbo");
             entity.Property(p => p.Id).HasColumnName("Id");
             entity.Property(p => p.Id).ValueGeneratedOnAdd();
+
+
+            entity.HasMany(x => x.PlaylistMovies)
+                .WithOne(x => x.Movie);
         }
     }
 }

@@ -13,6 +13,7 @@ using Kozachok.Utils.Validation;
 using System;
 using System.Linq;
 using AutoMapper;
+using Kozachok.Shared.DTO.Enums;
 using Kozachok.Shared.DTO.Models.DomainEntities;
 using Microsoft.EntityFrameworkCore;
 
@@ -150,15 +151,16 @@ namespace Kozachok.Domain.Handlers.Commands
                 return Unit.Value;
             }
 
-            //TODO: Need to add validation for private rooms(user can join private room only with secret key)
-            var isUserNotInRoom = await roomRepository
+            var isUserCanJoinRoom = await roomRepository
                 .AnyAsync(r => r.Id == request.RoomId 
-                               && r.RoomUsers.All(ru => ru.UserId != user.Id),
+                               && r.RoomUsers.All(ru => ru.UserId != user.Id
+                               && ((r.RoomTypeId == RoomType.Private && r.SecretToken == request.SecretToken) 
+                                   || r.RoomTypeId == RoomType.Public)),
                     cancellationToken);
 
-            if (!isUserNotInRoom)
+            if (!isUserCanJoinRoom)
             {
-                await Bus.InvokeDomainNotificationAsync("User already in this room.");
+                await Bus.InvokeDomainNotificationAsync("User cannot join this room.");
                 return Unit.Value;
             }
 

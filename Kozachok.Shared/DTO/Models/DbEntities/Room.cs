@@ -2,6 +2,7 @@
 using Kozachok.Shared.DTO.Enums;
 using System;
 using System.Collections.Generic;
+using Kozachok.Utils.Cryptography;
 
 namespace Kozachok.Shared.DTO.Models.DbEntities
 {
@@ -10,6 +11,7 @@ namespace Kozachok.Shared.DTO.Models.DbEntities
         public virtual string Name { get; set; }
         public virtual RoomType RoomTypeId { get; set; }
         public virtual Guid OwnerUserId { get; set; }
+        public virtual string SecretToken { get; set; }
         public virtual DateTime CreatedDateUtc { get; private set; }
 
         public virtual ICollection<RoomUser> RoomUsers { get; set; }
@@ -25,7 +27,8 @@ namespace Kozachok.Shared.DTO.Models.DbEntities
                 Name = name,
                 RoomTypeId = roomTypeId,
                 OwnerUserId = ownerUserId,
-                CreatedDateUtc = DateTime.UtcNow
+                CreatedDateUtc = DateTime.UtcNow,
+                SecretToken = roomTypeId == RoomType.Private ? RandomKeyGenerator.Generate() : null
             };
         }
     }

@@ -12,6 +12,7 @@ using System.Linq;
 using AutoMapper;
 using Kozachok.Shared.DTO.Enums;
 using Kozachok.Shared.DTO.Models.DomainEntities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kozachok.Domain.Handlers.Queries
 {
@@ -76,6 +77,10 @@ namespace Kozachok.Domain.Handlers.Queries
 
             var movieQuery = playlistMovieRepository
                 .Query()
+                .AsNoTracking()
+                .Include(pm => pm.Movie)
+                .Include(pm => pm.PlaylistMovieVideos)
+                    .ThenInclude(pmv => pmv.PlaylistMovieVideoQualities)
                 .Where(pm => pm.RoomId == request.RoomId)
                 .OrderBy(pm => pm.OrderNumber);
             

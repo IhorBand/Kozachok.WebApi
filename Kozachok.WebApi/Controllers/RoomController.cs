@@ -39,9 +39,10 @@ namespace Kozachok.WebApi.Controllers
 
         [HttpPut("{roomId}/Join")]
         [BearerAuthorization]
-        public async Task<IActionResult> JoinRoom([FromRoute] Guid roomId)
+        public async Task<IActionResult> JoinRoom([FromRoute] Guid roomId, 
+            [FromQuery] string? secretToken = null)
         {
-            await Bus.SendAsync(new JoinRoomCommand() { RoomId = roomId });
+            await Bus.SendAsync(new JoinRoomCommand() { RoomId = roomId, SecretToken = secretToken });
             return Response();
         }
 
@@ -66,14 +67,6 @@ namespace Kozachok.WebApi.Controllers
         public async Task<IActionResult> GetRoom([FromRoute(Name = "roomId")] Guid roomId)
         {
             var result = await Bus.RequestAsync(new GetRoomQuery() { RoomId = roomId });
-            return Response(result);
-        }
-
-        [HttpGet("{roomId}/Dependencies")]
-        [BearerAuthorization]
-        public async Task<IActionResult> GetRoomDependencies([FromRoute(Name = "roomId")] Guid roomId)
-        {
-            var result = await Bus.RequestAsync(new GetRoomFullInformationDtoQuery() { RoomId = roomId });
             return Response(result);
         }
 
