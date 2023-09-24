@@ -12,6 +12,7 @@ using System.Threading;
 using Kozachok.Domain.Commands.Playlist;
 using System.Linq;
 using Kozachok.Domain.Queries.MovieCatalog;
+using Kozachok.Shared;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kozachok.Domain.Handlers.Commands
@@ -60,6 +61,16 @@ namespace Kozachok.Domain.Handlers.Commands
             if (!isUserHasPermissionToAddMovie)
             {
                 await Bus.InvokeDomainNotificationAsync("User doesn't have permission to add movie to this room.");
+                return Unit.Value;
+            }
+
+            var playlistMoviesCount = await playlistMovieRepository
+                .Query(pm => pm.RoomId == request.RoomId)
+                .CountAsync(cancellationToken);
+
+            if (playlistMoviesCount >= GlobalConstants.PlaylistRoomMaxSize)
+            {
+                await Bus.InvokeDomainNotificationAsync("You have exceeded the limit for adding movies to the page, please delete the existing titles in your playlist to continue.");
                 return Unit.Value;
             }
 

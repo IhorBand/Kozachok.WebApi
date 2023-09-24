@@ -8,5 +8,6 @@ namespace Kozachok.Shared.DTO.Models.DomainEntities
         public List<UserInformationDto> UsersInRoom { get; set; }
         public List<PlaylistMovieDto> PlaylistMovies { get; set; }
         public UserInformationDto UserAdmin { get; set; }
+        public string SecretToken { get; set; }
     }
 }

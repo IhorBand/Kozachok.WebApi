@@ -18,7 +18,8 @@ namespace Kozachok.Repository.Mapping
             entity.HasMany(x => x.PlaylistMovieVideos)
                 .WithOne(x => x.PlaylistMovie);
 
-            entity.HasOne(x => x.Movie);
+            entity.HasOne(x => x.Movie)
+                .WithMany(x => x.PlaylistMovies);
 
             entity.HasOne(x => x.Room)
                 .WithMany(x => x.PlaylistMovies);

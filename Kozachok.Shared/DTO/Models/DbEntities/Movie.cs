@@ -1,6 +1,7 @@
 ﻿using Kozachok.Shared.DTO.Common;
 using Kozachok.Shared.DTO.Enums;
 using System;
+using System.Collections.Generic;
 
 namespace Kozachok.Shared.DTO.Models.DbEntities
 {
@@ -28,5 +29,7 @@ namespace Kozachok.Shared.DTO.Models.DbEntities
         public virtual MovieMainCategory MainCategoryId { get; set; }
         public virtual DateTime ReleaseDate { get; set; }
         public virtual DateTime CreatedDateUtc { get; private set; }
+
+        public virtual ICollection<PlaylistMovie> PlaylistMovies { get; set; }
     }
 }
